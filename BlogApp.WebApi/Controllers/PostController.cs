@@ -45,24 +45,54 @@ namespace BlogApp.WebApi.Controllers
 
         // POST: api/Post
         [HttpPost]
-        public async Task<ActionResult<Post>> PostPost(Post post)
+        public async Task<ActionResult<Post>> PostPost([FromBody] PostCreateDto postCreateDto)
         {
+            var blog = await _context.Blogs.FindAsync(postCreateDto.BlogId);
+            if (blog == null)
+            {
+                return NotFound("Blog not found.");
+            }
+
+            var post = new Post
+            {
+                Content = postCreateDto.Content,
+                PublishDate = DateTime.UtcNow,
+                BlogId = blog.BlogId,
+                // ititiate Comments и Tags
+                Comments = new List<Comment>(),
+                Tags = new List<Tag>()
+            };
+
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetPost", new { id = post.PostId }, post);
         }
 
+        // PostCreateDto
+        public class PostCreateDto
+        {
+            public string Content { get; set; }
+            public int BlogId { get; set; }
+        }
+
+        // PostEditDto
+        public class PostEditDto
+        {
+            public string Content { get; set; }
+        }
+
         // PUT: api/Post/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPost(int id, Post post)
+        public async Task<IActionResult> PutPost(int id, [FromBody] PostEditDto postEditDto)
         {
-            if (id != post.PostId)
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(post).State = EntityState.Modified;
+            post.Content = postEditDto.Content;
 
             try
             {
@@ -97,6 +127,16 @@ namespace BlogApp.WebApi.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpGet("ByBlog/{blogId}")] 
+        public async Task<ActionResult<IEnumerable<Post>>> GetPostsByBlogId(int blogId)
+        {
+            var posts = await _context.Posts
+                .Where(p => p.BlogId == blogId)
+                .ToListAsync();
+
+            return posts;
         }
     }
 }

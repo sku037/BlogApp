@@ -32,7 +32,7 @@
         var result = await BlogService.CreateBlog(blogCreateDto);
         if (result)
         {
-            NavigationManager.NavigateTo("/blog-list", true);
+            NavigationManager.NavigateTo("/", true);
         }
         else
         {

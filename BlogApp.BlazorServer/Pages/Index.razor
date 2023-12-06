@@ -3,6 +3,8 @@
 @using BlogApp.BlazorServer.Services
 @inject BlogService BlogService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
 
 <h1>Blog List</h1>
 <button @onclick="CreateBlog">Create Blog</button>
@@ -25,17 +27,20 @@ else
         @foreach (var blog in blogs)
         {
             <tr>
-                <td>@blog.Title</td>
+                <td>
+                    <a href="blog-posts/@blog.BlogId">@blog.Title</a>
+                </td>
                 <td>@blog.Description</td>
                 <td>
-                    <a href="blog-details/@blog.BlogId">Details</a>
                     <a href="edit-blog/@blog.BlogId">Edit</a>
+                    <button @onclick="() => ConfirmDelete(blog.BlogId)">Delete</button>
                 </td>
             </tr>
         }
         </tbody>
     </table>
 }
+
 
 @code {
     private IEnumerable<Blog> blogs;
@@ -48,5 +53,20 @@ else
     private void CreateBlog()
     {
         NavigationManager.NavigateTo("create-blog");
+    }
+
+    private async Task ConfirmDelete(int blogId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", new object[] { "Are you sure you want to delete this blog?" });
+        if (confirmed)
+        {
+            await DeleteBlog(blogId);
+        }
+    }
+
+    private async Task DeleteBlog(int blogId)
+    {
+        await BlogService.DeleteBlog(blogId);
+        blogs = await BlogService.GetBlogs(); 
     }
 }

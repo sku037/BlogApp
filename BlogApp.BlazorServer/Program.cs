@@ -35,6 +35,7 @@ builder.Services.AddHttpClient("BlogApi", client =>
 });
 
 builder.Services.AddScoped<BlogService>();
+builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddBlazoredLocalStorage();
 

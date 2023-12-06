@@ -1,0 +1,44 @@
+﻿@page "/create-post/{BlogId:int}"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject PostService PostService
+@inject NavigationManager NavigationManager
+
+<h3>Create Post</h3>
+
+<EditForm Model="@postCreateDto" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="content">Content:</label>
+        <InputTextArea id="content" class="form-control" @bind-Value="postCreateDto.Content" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+</EditForm>
+
+@code {
+    [Parameter] 
+    public int BlogId { get; set; } 
+
+    private PostCreateDto postCreateDto;
+
+    protected override void OnInitialized()
+    {
+        postCreateDto = new PostCreateDto { BlogId = BlogId };
+    }
+
+    private async Task HandleSubmit()
+    {
+        var result = await PostService.CreatePost(postCreateDto);
+        if (result)
+        {
+            NavigationManager.NavigateTo($"/blog-posts/{BlogId}", true);
+        }
+        else
+        {
+    // handle error
+        }
+    }
+}

@@ -1,0 +1,53 @@
+﻿@page "/edit-post/{PostId:int}"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject PostService PostService
+@inject NavigationManager NavigationManager
+
+<h3>Edit Post</h3>
+
+@if (postEditDto == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="@postEditDto" OnValidSubmit="@HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="content">Content:</label>
+            <InputTextArea id="content" class="form-control" @bind-Value="postEditDto.Content" />
+        </div>
+
+        <button type="submit" class="btn btn-success">Save Changes</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int PostId { get; set; }
+    private PostEditDto postEditDto;
+    private Post originalPost;
+
+    protected override async Task OnInitializedAsync()
+    {
+        originalPost = await PostService.GetPost(PostId);
+        if (originalPost != null)
+        {
+            postEditDto = new PostEditDto
+            {
+                Content = originalPost.Content
+    
+            };
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await PostService.UpdatePost(PostId, postEditDto);
+        NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
+    }
+
+}

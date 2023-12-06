@@ -45,9 +45,9 @@ namespace BlogApp.BlazorServer.Services
             }
         }
 
-        public async Task UpdateBlog(int id, Blog blog)
+        public async Task UpdateBlog(int id, BlogEditDto blogEditDto)
         {
-            var response = await _httpClient.PutAsJsonAsync($"{_baseUri}/{id}", blog);
+            var response = await _httpClient.PutAsJsonAsync($"{_baseUri}/{id}", blogEditDto);
             response.EnsureSuccessStatusCode();
         }
 

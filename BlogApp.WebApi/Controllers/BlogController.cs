@@ -75,38 +75,33 @@ namespace BlogApp.WebApi.Controllers
             public string Description { get; set; }
             public string Username { get; set; }
         }
+        public class BlogEditDto
+        {
+            public string Title { get; set; }
+            public string Description { get; set; }
+        }
 
 
 
         // PUT: api/Blog/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBlog(int id, Blog blog)
+        public async Task<IActionResult> PutBlog(int id, [FromBody] BlogEditDto blogEditDto)
         {
-            if (id != blog.BlogId)
+            var blog = await _context.Blogs.FindAsync(id);
+            if (blog == null)
             {
-                return BadRequest();
+                return NotFound();
             }
+
+            blog.Title = blogEditDto.Title;
+            blog.Description = blogEditDto.Description;
 
             _context.Entry(blog).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BlogExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
 
         // DELETE: api/Blog/5
         [HttpDelete("{id}")]
