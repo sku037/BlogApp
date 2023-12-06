@@ -1,0 +1,31 @@
+﻿@page "/blog/{BlogId:int}"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject BlogService BlogService
+
+<h3>Blog details</h3>
+
+@if (blog == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        <h4>@blog.Title</h4>
+        <p>@blog.Description</p>
+        <!-- Other blog details -->
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int BlogId { get; set; }
+
+    private Blog blog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        blog = await BlogService.GetBlog(BlogId);
+    }
+}

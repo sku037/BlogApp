@@ -1,0 +1,60 @@
+﻿@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@if (isLoaded && isLoggedIn)
+{
+    <span>Welcome, @userName!</span>
+    <a href="/logout">Logout</a>
+}
+else if (isLoaded)
+{
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+}
+
+@code {
+    private bool isLoggedIn;
+    private string userName;
+    private bool isLoaded = false;
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthenticationStateChanged += OnAuthenticationStateChanged;
+        OnAuthenticationStateChanged(); // Call immediately to check the login state
+    }
+
+    private void OnAuthenticationStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            isLoggedIn = await AuthService.IsUserLoggedIn();
+            if (isLoggedIn)
+            {
+                var token = await AuthService.GetAuthToken();
+                userName = GetUserNameFromToken(token);
+            }
+            else
+            {
+                userName = string.Empty;
+            }
+            isLoaded = true;
+            StateHasChanged();
+        });
+    }
+
+    private string GetUserNameFromToken(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+        var userNameClaim = jsonToken?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name || claim.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+        return userNameClaim?.Value ?? "";
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+}

@@ -1,0 +1,32 @@
+﻿@page "/blogs"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject BlogService BlogService
+
+<h3>Blog List</h3>
+
+@if (blogs == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @foreach (var blog in blogs)
+    {
+        <div>
+            <h4>@blog.Title</h4>
+            <p>@blog.Description</p>
+            <p><a href="blog/@blog.BlogId">Details</a></p>
+        </div>
+    }
+}
+
+@code {
+    private IEnumerable<Blog> blogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        blogs = await BlogService.GetBlogs();
+    }
+}
+

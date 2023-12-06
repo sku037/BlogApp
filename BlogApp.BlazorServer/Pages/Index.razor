@@ -1,0 +1,52 @@
+﻿@page "/"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject BlogService BlogService
+@inject NavigationManager NavigationManager
+
+<h1>Blog List</h1>
+<button @onclick="CreateBlog">Create Blog</button>
+
+@if (blogs == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Blog Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var blog in blogs)
+        {
+            <tr>
+                <td>@blog.Title</td>
+                <td>@blog.Description</td>
+                <td>
+                    <a href="blog-details/@blog.BlogId">Details</a>
+                    <a href="edit-blog/@blog.BlogId">Edit</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Blog> blogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        blogs = await BlogService.GetBlogs();
+    }
+
+    private void CreateBlog()
+    {
+        NavigationManager.NavigateTo("create-blog");
+    }
+}

@@ -44,6 +44,16 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = false,
         };
     });
+// CORS conf
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("https://localhost:7208") // URL Blazor Server 
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -55,6 +65,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS usage
+app.UseCors();
 
 app.UseAuthorization();
 app.UseAuthorization();

@@ -1,0 +1,68 @@
+﻿@page "/create-blog"
+@inject BlogService BlogService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@using System.Security.Claims
+
+@code {
+    private BlogCreateDto blogCreateDto = new BlogCreateDto();
+    private bool isAuthenticated = false;
+    private string username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity.IsAuthenticated;
+
+        if (isAuthenticated)
+        {
+            username = authState.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
+            blogCreateDto.Username = username;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("login");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        var result = await BlogService.CreateBlog(blogCreateDto);
+        if (result)
+        {
+            NavigationManager.NavigateTo("/blog-list", true);
+        }
+        else
+        {
+            // Handle the error
+        }
+    }
+}
+
+@if (isAuthenticated)
+{
+    <h3>Create New Blog</h3>
+
+    <EditForm Model="@blogCreateDto" OnValidSubmit="@HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="title">Title:</label>
+            <InputText id="title" class="form-control" @bind-Value="blogCreateDto.Title" />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="blogCreateDto.Description" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </EditForm>
+}
+else
+{
+    <p>Please <a href="login">log in</a> to create a blog.</p>
+}

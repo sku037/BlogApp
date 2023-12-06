@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogApp.WebApi", "BlogApp.WebApi\BlogApp.WebApi.csproj", "{0CCAC2B2-A128-4EA8-B460-C24FF706B8AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlogApp.WebApi", "BlogApp.WebApi\BlogApp.WebApi.csproj", "{0CCAC2B2-A128-4EA8-B460-C24FF706B8AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogUnitTest", "BlogUnitTest\BlogUnitTest.csproj", "{EAB8DCE0-C9B1-449B-8F6C-3EE1CE9DC4D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlogUnitTest", "BlogUnitTest\BlogUnitTest.csproj", "{EAB8DCE0-C9B1-449B-8F6C-3EE1CE9DC4D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogApp.BlazorServer", "BlogApp.BlazorServer\BlogApp.BlazorServer.csproj", "{669A7559-98E0-4AFB-B624-6EA5D485819D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{EAB8DCE0-C9B1-449B-8F6C-3EE1CE9DC4D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAB8DCE0-C9B1-449B-8F6C-3EE1CE9DC4D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAB8DCE0-C9B1-449B-8F6C-3EE1CE9DC4D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{669A7559-98E0-4AFB-B624-6EA5D485819D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{669A7559-98E0-4AFB-B624-6EA5D485819D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{669A7559-98E0-4AFB-B624-6EA5D485819D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{669A7559-98E0-4AFB-B624-6EA5D485819D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 ﻿using BlogApp.WebApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,13 +41,42 @@ namespace BlogApp.WebApi.Controllers
 
         // POST: api/Blog
         [HttpPost]
-        public async Task<ActionResult<Blog>> PostBlog(Blog blog)
+        public async Task<ActionResult<Blog>> PostBlog([FromBody] BlogCreateDto blogCreateDto)
         {
+            // Find User.
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == blogCreateDto.Username);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Convert blogCreateDto to Blog.
+            var blog = new Blog
+            {
+                Title = blogCreateDto.Title,
+                Description = blogCreateDto.Description,
+                CreatedDate = DateTime.UtcNow, 
+                UserId = user.Id, 
+                Posts = new List<Post>() 
+            };
+
+            // add new blog.
             _context.Blogs.Add(blog);
             await _context.SaveChangesAsync();
 
+            // return blog with url
             return CreatedAtAction("GetBlog", new { id = blog.BlogId }, blog);
         }
+
+        // DTO.
+        public class BlogCreateDto
+        {
+            public string Title { get; set; }
+            public string Description { get; set; }
+            public string Username { get; set; }
+        }
+
+
 
         // PUT: api/Blog/5
         [HttpPut("{id}")]
