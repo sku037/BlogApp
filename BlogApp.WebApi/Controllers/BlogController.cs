@@ -20,16 +20,35 @@ namespace BlogApp.WebApi.Controllers
 
         // GET: api/Blog
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Blog>>> GetBlogs()
+        public async Task<ActionResult<IEnumerable<BlogDto>>> GetBlogs()
         {
-            return await _context.Blogs.ToListAsync();
+            var blogs = await _context.Blogs
+                .Select(b => new BlogDto
+                {
+                    BlogId = b.BlogId,
+                    Title = b.Title,
+                    Description = b.Description,
+                    CreatedDate = b.CreatedDate
+                })
+                .ToListAsync();
+
+            return blogs;
         }
 
         // GET: api/Blog/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Blog>> GetBlog(int id)
+        public async Task<ActionResult<BlogDto>> GetBlog(int id)
         {
-            var blog = await _context.Blogs.FindAsync(id);
+            var blog = await _context.Blogs
+                .Where(b => b.BlogId == id)
+                .Select(b => new BlogDto
+                {
+                    BlogId = b.BlogId,
+                    Title = b.Title,
+                    Description = b.Description,
+                    CreatedDate = b.CreatedDate
+                })
+                .FirstOrDefaultAsync();
 
             if (blog == null)
             {
@@ -41,7 +60,7 @@ namespace BlogApp.WebApi.Controllers
 
         // POST: api/Blog
         [HttpPost]
-        public async Task<ActionResult<Blog>> PostBlog([FromBody] BlogCreateDto blogCreateDto)
+        public async Task<ActionResult<BlogDto>> PostBlog([FromBody] BlogCreateDto blogCreateDto)
         {
             // Find User.
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == blogCreateDto.Username);
@@ -64,8 +83,16 @@ namespace BlogApp.WebApi.Controllers
             _context.Blogs.Add(blog);
             await _context.SaveChangesAsync();
 
+            var createdBlogDto = new BlogDto
+            {
+                BlogId = blog.BlogId,
+                Title = blog.Title,
+                Description = blog.Description,
+                CreatedDate = blog.CreatedDate
+            };
+
             // return blog with url
-            return CreatedAtAction("GetBlog", new { id = blog.BlogId }, blog);
+            return CreatedAtAction("GetBlog", new { id = blog.BlogId }, createdBlogDto);
         }
 
         // DTO.

@@ -21,10 +21,10 @@ namespace BlogApp.WebApi.Models
             base.OnModelCreating(modelBuilder);
 
             // Relationship conf between ApplicationUser and Blog
-            //modelBuilder.Entity<ApplicationUser>()
-            //    .HasMany(u => u.Blogs) // ApplicationUser har mange Blogs
-            //    .WithOne(b => b.User) // Blog har en User
-            //    .HasForeignKey(b => b.UserId); // Foreign key in Blog - UserId
+            modelBuilder.Entity<ApplicationUser>()
+                .HasMany(u => u.Blogs) // ApplicationUser har mange Blogs
+                .WithOne(b => b.User) // Blog har en User
+                .HasForeignKey(b => b.UserId); // Foreign key in Blog - UserId
 
             // Relationship of Comment to Post
             modelBuilder.Entity<Comment>()

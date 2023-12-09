@@ -12,7 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+// Server timeout for SignalR increase
+builder.Services.AddServerSideBlazor().AddHubOptions(options =>
+{
+    options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+});
 
 // Add ASP.NET Core Identity Services (if using Identity)
 // Configure Entity Framework and Identity here if applicable
@@ -36,8 +41,15 @@ builder.Services.AddHttpClient("BlogApi", client =>
 
 builder.Services.AddScoped<BlogService>();
 builder.Services.AddScoped<PostService>();
+builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddBlazoredLocalStorage();
+
+// Detailed error messages enabled 
+builder.Services.AddServerSideBlazor().AddHubOptions(options =>
+{
+    options.EnableDetailedErrors = true;
+});
 
 var app = builder.Build();
 

@@ -66,3 +66,25 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+.post-container {
+    border-bottom: 2px solid #ddd; /* Double line under post */
+    margin-bottom: 20px;
+}
+
+.comment-container {
+    border-bottom: 1px solid #ccc; /* Single line under each comment */
+    margin-bottom: 10px;
+}
+
+.comment-input-area {
+    width: 50%; /* Comment input field is half the width of the parent container */
+}
+
+.add-comment-btn {
+    margin-top: 10px; /* Top padding for button */
+}
+
+.back-button-container {
+    margin-top: 20px; 
+}

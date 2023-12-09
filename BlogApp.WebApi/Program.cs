@@ -44,12 +44,12 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = false,
         };
     });
-// CORS conf
+// CORS conf for two sources Blazor server og local file
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
     {
-        builder.WithOrigins("https://localhost:7208") // URL Blazor Server 
+        builder.WithOrigins("https://localhost:7208", "null") // URL Blazor Server 
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

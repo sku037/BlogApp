@@ -1,6 +1,7 @@
 ﻿@page "/edit-post/{PostId:int}"
 @using BlogApp.BlazorServer.Models
 @using BlogApp.BlazorServer.Services
+@using BlogApp.WebApi.Models
 @inject PostService PostService
 @inject NavigationManager NavigationManager
 
@@ -17,6 +18,11 @@ else
         <ValidationSummary />
 
         <div class="form-group">
+            <label for="postTitle">Title:</label>
+            <InputText id="postTitle" class="form-control" @bind-Value="postEditDto.PostTitle" />
+        </div>
+
+        <div class="form-group">
             <label for="content">Content:</label>
             <InputTextArea id="content" class="form-control" @bind-Value="postEditDto.Content" />
         </div>
@@ -29,7 +35,7 @@ else
     [Parameter]
     public int PostId { get; set; }
     private PostEditDto postEditDto;
-    private Post originalPost;
+    private PostDetailDto originalPost;
 
     protected override async Task OnInitializedAsync()
     {
@@ -38,8 +44,8 @@ else
         {
             postEditDto = new PostEditDto
             {
+                PostTitle = originalPost.PostTitle,
                 Content = originalPost.Content
-    
             };
         }
     }

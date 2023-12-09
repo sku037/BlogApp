@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using BlogApp.BlazorServer.Models;
+using BlogApp.WebApi.Models;
 
 namespace BlogApp.BlazorServer.Services
 {
@@ -23,11 +24,11 @@ namespace BlogApp.BlazorServer.Services
             return await response.Content.ReadFromJsonAsync<IEnumerable<Post>>();
         }
 
-        public async Task<Post> GetPost(int id)
+        public async Task<PostDetailDto> GetPost(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUri}/{id}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Post>();
+            return await response.Content.ReadFromJsonAsync<PostDetailDto>();
         }
 
         public async Task<bool> CreatePost(PostCreateDto postCreateDto)
@@ -42,6 +43,7 @@ namespace BlogApp.BlazorServer.Services
                 return false;
             }
         }
+
 
         public async Task UpdatePost(int id, PostEditDto postEditDto)
         {

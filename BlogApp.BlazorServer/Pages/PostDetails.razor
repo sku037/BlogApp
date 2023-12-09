@@ -1,0 +1,105 @@
+﻿@page "/post-details/{PostId:int}/{BlogId:int}"
+@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@using BlogApp.WebApi.Models
+@inject CommentService CommentService
+@inject PostService PostService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="post-container">
+    <h2>@post?.PostTitle</h2>
+    <p>Published on: @post?.PublishDate.ToString("yyyy-MM-dd")</p>
+    <p>@post?.Content</p>
+    <p>Posted by: @post?.Username</p>
+</div>
+
+<h3>Comments</h3>
+@if (comments != null && comments.Any())
+{
+    foreach (var comment in comments)
+    {
+        <div class="comment-container">
+            <p>@comment.Text</p>
+            <p>Added by: @comment.Username on @comment.Date.ToString("yyyy-MM-dd")</p>
+        </div>
+    }
+}
+else
+{
+    <p>No comments yet.</p>
+}
+
+@* Add comment *@
+@if (isAuthenticated)
+{
+    <EditForm Model="@newComment" OnValidSubmit="@AddComment">
+        <div class="comment-input-area">
+            <InputTextArea @bind-Value="newComment.Text" />
+        </div>
+        <button type="submit">Add Comment</button>
+    </EditForm>
+}
+else
+{
+    <p>Please <a href="/login">login</a> to add a comment.</p>
+}
+
+<div class="back-button-container">
+    <button class="btn btn-secondary" @onclick="GoBack">Back</button>
+</div>
+
+@code {
+    [Parameter]
+    public int PostId { get; set; }
+    [Parameter]
+    public int BlogId { get; set; }
+
+    private PostDetailDto post;
+    private IEnumerable<CommentDetailDto> comments;
+    private Comment newComment = new Comment();
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        post = await PostService.GetPost(PostId);
+        comments = await CommentService.GetCommentsByPostId(PostId);
+        isAuthenticated = await IsUserAuthenticated();
+    }
+
+    private async Task AddComment()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        var username = user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
+
+        var commentCreateDto = new CommentCreateDto
+            {
+                PostId = PostId,
+                Text = newComment.Text,
+                Username = username
+            };
+
+        await CommentService.CreateComment(commentCreateDto);
+        newComment = new Comment();
+        comments = await CommentService.GetCommentsByPostId(PostId);
+    }
+
+    private async Task<bool> IsUserAuthenticated()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.Identity.IsAuthenticated;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo($"/blog-posts/{BlogId}");
+    }
+}

@@ -9,32 +9,28 @@
 
 <button @onclick="CreatePost">Create Post</button>
 
-@if (posts == null || !posts.Any())
-{
-    <p>No posts available for this blog.</p>
-}
-else
+@if (posts != null && posts.Any())
 {
     <table class="table">
         <thead>
-        <tr>
-            <th>Content</th>
-            <th>Publish Date</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
+                <th>Post Title</th>
+                <th>Publish Date</th>
+                <th>Actions</th>
+            </tr>
         </thead>
         <tbody>
-        @foreach (var post in posts)
-        {
-            <tr>
-                <td>@post.Content</td>
-                <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
-                <td>
-                    <a href="edit-post/@post.PostId">Edit</a>
-                    <button @onclick="() => ConfirmDelete(post.PostId)">Delete</button>
-                </td>
-            </tr>
-        }
+            @foreach (var post in posts)
+            {
+                <tr>
+                    <td><a href="/post-details/@post.PostId/@BlogId">@post.PostTitle</a></td>
+                    <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <a href="/edit-post/@post.PostId">Edit</a>
+                        <button @onclick="() => ConfirmDelete(post.PostId)">Delete</button>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
 }

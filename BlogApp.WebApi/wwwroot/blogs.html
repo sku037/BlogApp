@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog List</title>
+    <style>
+        .blog-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        /* Additional styles */
+    </style>
+</head>
+<body>
+<h1>Blog List</h1>
+<button id="show-login">Login</button>
+<div id="loginModal" style="display:none;">
+    <!-- Форма логина -->
+    <h2>Login</h2>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<button id="create-blog" style="display:none;">Create Blog</button>
+<div id="create-blog-form" style="display:none;">
+    <!-- Форма создания блога -->
+    <h2>Create Blog</h2>
+    <form id="blog-form">
+        <input type="text" id="blog-title" placeholder="Title" required />
+        <textarea id="blog-description" placeholder="Description" required></textarea>
+        <button type="submit">Create Blog</button>
+    </form>
+</div>
+
+<table id="blogs-table">
+    <!-- Table for blogs -->
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="blogs"></tbody>
+</table>
+
+<!-- Подключение скриптов -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/login.js"></script>
+<script src="js/blog.js"></script>
+<script src="js/createBlog.js"></script>
+<script src="js/editBlog.js"></script>
+<script src="js/deleteBlog.js"></script>
+</body>
+</html>

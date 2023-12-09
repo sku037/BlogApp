@@ -18,22 +18,38 @@ namespace BlogApp.WebApi.Controllers
 
         // GET: api/Post
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
+        public async Task<ActionResult<IEnumerable<PostDto>>> GetPosts()
         {
-            return await _context.Posts
-                                 .Include(p => p.Comments)
-                                 .Include(p => p.Tags)
-                                 .ToListAsync();
+            var posts = await _context.Posts
+                .Select(p => new PostDto
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    PublishDate = p.PublishDate
+                    // Map other properties as needed
+                })
+                .ToListAsync();
+
+            return posts;
         }
 
         // GET: api/Post/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Post>> GetPost(int id)
+        public async Task<ActionResult<PostDetailDto>> GetPost(int id)
         {
             var post = await _context.Posts
-                                     .Include(p => p.Comments)
-                                     .Include(p => p.Tags)
-                                     .FirstOrDefaultAsync(p => p.PostId == id);
+                .Include(p => p.Blog) // Include the Blog
+                .ThenInclude(b => b.User) // Include the User related to the Blog
+                .Where(p => p.PostId == id)
+                .Select(p => new PostDetailDto
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    Content = p.Content,
+                    PublishDate = p.PublishDate,
+                    Username = p.Blog.User.UserName 
+                })
+                .FirstOrDefaultAsync();
 
             if (post == null)
             {
@@ -43,9 +59,10 @@ namespace BlogApp.WebApi.Controllers
             return post;
         }
 
+
         // POST: api/Post
         [HttpPost]
-        public async Task<ActionResult<Post>> PostPost([FromBody] PostCreateDto postCreateDto)
+        public async Task<ActionResult<PostDetailDto>> PostPost([FromBody] PostCreateDto postCreateDto)
         {
             var blog = await _context.Blogs.FindAsync(postCreateDto.BlogId);
             if (blog == null)
@@ -55,6 +72,7 @@ namespace BlogApp.WebApi.Controllers
 
             var post = new Post
             {
+                PostTitle = postCreateDto.PostTitle,
                 Content = postCreateDto.Content,
                 PublishDate = DateTime.UtcNow,
                 BlogId = blog.BlogId,
@@ -66,21 +84,27 @@ namespace BlogApp.WebApi.Controllers
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPost", new { id = post.PostId }, post);
+            var createdPostDto = new PostDetailDto
+            {
+                PostId = post.PostId,
+                PostTitle = post.PostTitle,
+                Content = post.Content,
+                PublishDate = post.PublishDate
+                // Map other properties as needed
+            };
+
+            return CreatedAtAction("GetPost", new { id = post.PostId }, createdPostDto);
         }
 
         // PostCreateDto
         public class PostCreateDto
         {
+            public string PostTitle { get; set; }
             public string Content { get; set; }
             public int BlogId { get; set; }
         }
 
-        // PostEditDto
-        public class PostEditDto
-        {
-            public string Content { get; set; }
-        }
+        
 
         // PUT: api/Post/5
         [HttpPut("{id}")]
@@ -92,6 +116,7 @@ namespace BlogApp.WebApi.Controllers
                 return NotFound();
             }
 
+            post.PostTitle = postEditDto.PostTitle;
             post.Content = postEditDto.Content;
 
             try
@@ -113,6 +138,13 @@ namespace BlogApp.WebApi.Controllers
             return NoContent();
         }
 
+        // PostEditDto
+        public class PostEditDto
+        {
+            public string PostTitle { get; set; }
+            public string Content { get; set; }
+        }
+
         // DELETE: api/Post/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(int id)
@@ -129,11 +161,19 @@ namespace BlogApp.WebApi.Controllers
             return NoContent();
         }
 
-        [HttpGet("ByBlog/{blogId}")] 
-        public async Task<ActionResult<IEnumerable<Post>>> GetPostsByBlogId(int blogId)
+        // GET: api/Post/ByBlog/5
+        [HttpGet("ByBlog/{blogId}")]
+        public async Task<ActionResult<IEnumerable<PostDto>>> GetPostsByBlogId(int blogId)
         {
             var posts = await _context.Posts
                 .Where(p => p.BlogId == blogId)
+                .Select(p => new PostDto
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    PublishDate = p.PublishDate
+                    // Map other properties as needed
+                })
                 .ToListAsync();
 
             return posts;

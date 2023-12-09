@@ -96,9 +96,6 @@ namespace BlogApp.WebApi.Controllers
                 
             });
         }
-
-
-
     }
 
     public class LoginModel

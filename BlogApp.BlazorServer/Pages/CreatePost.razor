@@ -11,6 +11,11 @@
     <ValidationSummary />
 
     <div class="form-group">
+        <label for="postTitle">Post Title:</label>
+        <InputText id="postTitle" class="form-control" @bind-Value="postCreateDto.PostTitle" />
+    </div>
+
+    <div class="form-group">
         <label for="content">Content:</label>
         <InputTextArea id="content" class="form-control" @bind-Value="postCreateDto.Content" />
     </div>

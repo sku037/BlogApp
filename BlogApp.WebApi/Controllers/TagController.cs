@@ -18,20 +18,31 @@ namespace BlogApp.WebApi.Controllers
 
         // GET: api/Tag
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Tag>>> GetTags()
+        public async Task<ActionResult<IEnumerable<TagDto>>> GetTags()
         {
             return await _context.Tags
-                                 .Include(t => t.Posts)
-                                 .ToListAsync();
+                .Select(t => new TagDto
+                {
+                    TagId = t.TagId,
+                    Name = t.Name
+                    
+                })
+                .ToListAsync();
         }
 
         // GET: api/Tag/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Tag>> GetTag(int id)
+        public async Task<ActionResult<TagDto>> GetTag(int id)
         {
             var tag = await _context.Tags
-                                    .Include(t => t.Posts)
-                                    .FirstOrDefaultAsync(t => t.TagId == id);
+                .Where(t => t.TagId == id)
+                .Select(t => new TagDto
+                {
+                    TagId = t.TagId,
+                    Name = t.Name
+                    
+                })
+                .FirstOrDefaultAsync();
 
             if (tag == null)
             {
@@ -43,12 +54,19 @@ namespace BlogApp.WebApi.Controllers
 
         // POST: api/Tag
         [HttpPost]
-        public async Task<ActionResult<Tag>> PostTag(Tag tag)
+        public async Task<ActionResult<TagDto>> PostTag(Tag tag)
         {
             _context.Tags.Add(tag);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTag", new { id = tag.TagId }, tag);
+            var createdTagDto = new TagDto
+            {
+                TagId = tag.TagId,
+                Name = tag.Name
+                // Map other properties as needed
+            };
+
+            return CreatedAtAction("GetTag", new { id = tag.TagId }, createdTagDto);
         }
 
         // PUT: api/Tag/5
