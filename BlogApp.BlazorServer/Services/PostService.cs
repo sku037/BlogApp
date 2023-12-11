@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net.Http.Json;
 using BlogApp.BlazorServer.Models;
 using BlogApp.WebApi.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApp.BlazorServer.Services
 {
@@ -36,20 +37,52 @@ namespace BlogApp.BlazorServer.Services
             try
             {
                 var response = await _httpClient.PostAsJsonAsync(_baseUri, postCreateDto);
-                return response.IsSuccessStatusCode;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else
+                {
+                    // Read the response body as a string if the status code indicates a failure.
+                    var content = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("Error: " + content);
+                    return false;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine("Exception: " + ex.Message);
                 return false;
             }
         }
 
 
-        public async Task UpdatePost(int id, PostEditDto postEditDto)
+        public async Task<bool> UpdatePost(int id, PostEditDto postEditDto)
         {
-            var response = await _httpClient.PutAsJsonAsync($"{_baseUri}/{id}", postEditDto);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"{_baseUri}/{id}", postEditDto);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else
+                {
+                    // Read the response body as a string if the status code indicates a failure.
+                    var content = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("Error: " + content);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex.Message);
+                return false;
+            }
         }
+
 
         public async Task DeletePost(int id)
         {
@@ -62,6 +95,20 @@ namespace BlogApp.BlazorServer.Services
             var response = await _httpClient.GetAsync($"{_baseUri}/ByBlog/{blogId}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<IEnumerable<Post>>();
+        }
+
+        public async Task<IEnumerable<PostDto>> GetPostsByBlogIdWithTags(int blogId)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUri}/ByBlogWithTags/{blogId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<IEnumerable<PostDto>>();
+            }
+            else
+            {
+                return new List<PostDto>();
+            }
         }
     }
 }

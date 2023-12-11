@@ -11,6 +11,8 @@ namespace BlogApp.WebApi.Models
         public DateTime PublishDate { get; set; }
         public string Username { get; set; }
         public int BlogId { get; set; }
+        public List<string> TagNames { get; set; }
+        public List<TagDto> Tags { get; set; }
     }
 
 }

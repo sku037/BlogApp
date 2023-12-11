@@ -2,11 +2,12 @@
 
 namespace BlogApp.BlazorServer.Models
 {
-    public class PostEditDto
+    public class PostCreateDto
     {
         public string PostTitle { get; set; }
         public string Content { get; set; }
-        public List<int> TagIds { get; set; }
+        public int BlogId { get; set; }
+        public List<int> TagIds { get; set; } = new List<int>();
         public List<string> TagNames { get; set; }
     }
 }

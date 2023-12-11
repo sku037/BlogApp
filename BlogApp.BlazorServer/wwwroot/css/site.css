@@ -88,3 +88,11 @@ a, .btn-link {
 .back-button-container {
     margin-top: 20px; 
 }
+
+.tag {
+    background-color: #f0f0f0;
+    padding: 3px 6px;
+    margin-right: 5px;
+    border-radius: 4px;
+    display: inline-block;
+}

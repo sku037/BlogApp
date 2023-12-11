@@ -1,4 +1,5 @@
-﻿using BlogApp.WebApi.Models;
+﻿using BlogApp.BlazorServer.Models;
+using BlogApp.WebApi.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,14 +41,17 @@ namespace BlogApp.WebApi.Controllers
             var post = await _context.Posts
                 .Include(p => p.Blog) // Include the Blog
                 .ThenInclude(b => b.User) // Include the User related to the Blog
+                .Include(p => p.Tags) // Include the Tags
                 .Where(p => p.PostId == id)
                 .Select(p => new PostDetailDto
                 {
                     PostId = p.PostId,
+                    BlogId = p.BlogId,
                     PostTitle = p.PostTitle,
                     Content = p.Content,
                     PublishDate = p.PublishDate,
-                    Username = p.Blog.User.UserName 
+                    Username = p.Blog.User.UserName,
+                    Tags = p.Tags.Select(t => new TagDto { TagId = t.TagId, Name = t.Name }).ToList() // Map Tags to TagDto
                 })
                 .FirstOrDefaultAsync();
 
@@ -70,15 +74,29 @@ namespace BlogApp.WebApi.Controllers
                 return NotFound("Blog not found.");
             }
 
+            // Create or find tags in the database
+            var tags = new List<Tag>();
+            if (postCreateDto.TagNames != null)
+            {
+                foreach (var tagName in postCreateDto.TagNames)
+                {
+                    var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == tagName);
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = tagName };
+                        _context.Tags.Add(tag);
+                    }
+                    tags.Add(tag);
+                }
+            }
+
             var post = new Post
             {
                 PostTitle = postCreateDto.PostTitle,
                 Content = postCreateDto.Content,
                 PublishDate = DateTime.UtcNow,
                 BlogId = blog.BlogId,
-                // ititiate Comments и Tags
-                Comments = new List<Comment>(),
-                Tags = new List<Tag>()
+                Tags = tags 
             };
 
             _context.Posts.Add(post);
@@ -89,28 +107,20 @@ namespace BlogApp.WebApi.Controllers
                 PostId = post.PostId,
                 PostTitle = post.PostTitle,
                 Content = post.Content,
-                PublishDate = post.PublishDate
-                // Map other properties as needed
+                PublishDate = post.PublishDate,
+                TagNames = post.Tags.Select(t => t.Name).ToList() 
             };
 
             return CreatedAtAction("GetPost", new { id = post.PostId }, createdPostDto);
         }
 
-        // PostCreateDto
-        public class PostCreateDto
-        {
-            public string PostTitle { get; set; }
-            public string Content { get; set; }
-            public int BlogId { get; set; }
-        }
-
-        
-
-        // PUT: api/Post/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPost(int id, [FromBody] PostEditDto postEditDto)
         {
-            var post = await _context.Posts.FindAsync(id);
+            var post = await _context.Posts
+                .Include(p => p.Tags)
+                .FirstOrDefaultAsync(p => p.PostId == id);
+
             if (post == null)
             {
                 return NotFound();
@@ -118,6 +128,34 @@ namespace BlogApp.WebApi.Controllers
 
             post.PostTitle = postEditDto.PostTitle;
             post.Content = postEditDto.Content;
+
+            // Update tags
+            if (postEditDto.TagNames != null)
+            {
+                var currentTagNames = post.Tags.Select(t => t.Name).ToList();
+                var tagsToRemove = post.Tags.Where(t => !postEditDto.TagNames.Contains(t.Name)).ToList();
+
+                foreach (var tag in tagsToRemove)
+                {
+                    post.Tags.Remove(tag);
+                }
+
+                foreach (var tagName in postEditDto.TagNames.Except(currentTagNames))
+                {
+                    var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == tagName);
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = tagName };
+                        await _context.Tags.AddAsync(tag);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    if (!post.Tags.Any(t => t.TagId == tag.TagId))
+                    {
+                        post.Tags.Add(tag);
+                    }
+                }
+            }
 
             try
             {
@@ -138,12 +176,7 @@ namespace BlogApp.WebApi.Controllers
             return NoContent();
         }
 
-        // PostEditDto
-        public class PostEditDto
-        {
-            public string PostTitle { get; set; }
-            public string Content { get; set; }
-        }
+
 
         // DELETE: api/Post/5
         [HttpDelete("{id}")]
@@ -178,5 +211,24 @@ namespace BlogApp.WebApi.Controllers
 
             return posts;
         }
+
+        // GET: api/Post/ByBlog/5/WithTags
+        [HttpGet("ByBlogWithTags/{blogId}")]
+        public async Task<ActionResult<IEnumerable<PostDto>>> GetPostsByBlogIdWithTags(int blogId)
+        {
+            var posts = await _context.Posts
+                .Where(p => p.BlogId == blogId)
+                .Select(p => new PostDto
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    PublishDate = p.PublishDate,
+                    Tags = p.Tags.Select(t => new TagDto { TagId = t.TagId, Name = t.Name }).ToList()
+                })
+                .ToListAsync();
+
+            return posts;
+        }
+
     }
 }

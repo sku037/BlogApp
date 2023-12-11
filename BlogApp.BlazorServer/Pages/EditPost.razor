@@ -4,6 +4,7 @@
 @using BlogApp.WebApi.Models
 @inject PostService PostService
 @inject NavigationManager NavigationManager
+@inject TagService TagService
 
 <h3>Edit Post</h3>
 
@@ -27,6 +28,11 @@ else
             <InputTextArea id="content" class="form-control" @bind-Value="postEditDto.Content" />
         </div>
 
+        <div class="form-group">
+            <label for="tags">Tags (enter tags separated by commas):</label>
+            <InputText id="tags" class="form-control" @bind-Value="tagsAsString" placeholder="Enter tags separated by commas" />
+        </div>
+
         <button type="submit" class="btn btn-success">Save Changes</button>
     </EditForm>
 }
@@ -36,24 +42,55 @@ else
     public int PostId { get; set; }
     private PostEditDto postEditDto;
     private PostDetailDto originalPost;
+    private List<TagDto> allTags;
+    private string tagsAsString;
 
     protected override async Task OnInitializedAsync()
     {
-        originalPost = await PostService.GetPost(PostId);
-        if (originalPost != null)
+        try
         {
-            postEditDto = new PostEditDto
+            originalPost = await PostService.GetPost(PostId);
+            allTags = (await TagService.GetAllTags()).ToList();
+
+            if (originalPost != null)
             {
-                PostTitle = originalPost.PostTitle,
-                Content = originalPost.Content
-            };
+                postEditDto = new PostEditDto
+                {
+                    PostTitle = originalPost.PostTitle,
+                    Content = originalPost.Content,
+                    TagIds = originalPost.Tags?.Select(t => t.TagId).ToList() ?? new List<int>(),
+                    TagNames = originalPost.Tags?.Select(t => t.Name).ToList() ?? new List<string>() // init TagNames
+                };
+                tagsAsString = String.Join(", ", postEditDto.TagNames); 
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading post: {ex.Message}");
         }
     }
 
     private async Task HandleSubmit()
     {
+        postEditDto.TagNames = tagsAsString.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
         await PostService.UpdatePost(PostId, postEditDto);
         NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
     }
 
+    private List<int> ParseTagsFromString(string tags)
+    {
+        var tagNames = tags.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var tagIds = new List<int>();
+
+        foreach (var tagName in tagNames)
+        {
+            var tag = allTags.FirstOrDefault(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase));
+            if (tag != null)
+            {
+                tagIds.Add(tag.TagId);
+            }
+        }
+
+        return tagIds;
+    }
 }

@@ -20,6 +20,11 @@
         <InputTextArea id="content" class="form-control" @bind-Value="postCreateDto.Content" />
     </div>
 
+    <div class="form-group">
+        <label for="tags">Tags:</label>
+        <InputText id="tags" class="form-control" @bind-Value="tagsInput" placeholder="Enter tags separated by commas" />
+    </div>
+
     <button type="submit" class="btn btn-primary">Create</button>
 </EditForm>
 
@@ -27,15 +32,19 @@
     [Parameter] 
     public int BlogId { get; set; } 
 
-    private PostCreateDto postCreateDto;
+    private PostCreateDto postCreateDto = new PostCreateDto();
+    private string tagsInput;
 
     protected override void OnInitialized()
     {
-        postCreateDto = new PostCreateDto { BlogId = BlogId };
+        postCreateDto.BlogId = BlogId;
     }
 
     private async Task HandleSubmit()
     {
+        var tagNames = ParseTags(tagsInput);
+        postCreateDto.TagNames = tagNames;
+        
         var result = await PostService.CreatePost(postCreateDto);
         if (result)
         {
@@ -45,5 +54,12 @@
         {
     // handle error
         }
+    }
+
+    private List<string> ParseTags(string tags)
+    {
+        return tags?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(tag => tag.Trim().StartsWith("#") ? tag : $"#{tag}")
+            .ToList() ?? new List<string>();
     }
 }

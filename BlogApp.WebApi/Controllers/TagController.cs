@@ -25,7 +25,6 @@ namespace BlogApp.WebApi.Controllers
                 {
                     TagId = t.TagId,
                     Name = t.Name
-                    
                 })
                 .ToListAsync();
         }
@@ -54,20 +53,15 @@ namespace BlogApp.WebApi.Controllers
 
         // POST: api/Tag
         [HttpPost]
-        public async Task<ActionResult<TagDto>> PostTag(Tag tag)
+        public async Task<ActionResult<TagDto>> PostTag([FromBody] TagCreateDto tagCreateDto)
         {
+            var tag = new Tag { Name = tagCreateDto.Name };
             _context.Tags.Add(tag);
             await _context.SaveChangesAsync();
 
-            var createdTagDto = new TagDto
-            {
-                TagId = tag.TagId,
-                Name = tag.Name
-                // Map other properties as needed
-            };
-
-            return CreatedAtAction("GetTag", new { id = tag.TagId }, createdTagDto);
+            return CreatedAtAction("GetTag", new { id = tag.TagId }, new TagDto { TagId = tag.TagId, Name = tag.Name });
         }
+
 
         // PUT: api/Tag/5
         [HttpPut("{id}")]

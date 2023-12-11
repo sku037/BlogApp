@@ -19,6 +19,7 @@ namespace BlogApp.BlazorServer.Models
 
         // Relationship with Tags
         public virtual ICollection<Tag> Tags { get; set; }
+        
     }
 
 }

@@ -42,6 +42,7 @@ builder.Services.AddHttpClient("BlogApi", client =>
 builder.Services.AddScoped<BlogService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<CommentService>();
+builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddBlazoredLocalStorage();
 
@@ -65,8 +66,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication(); // Add authentication middleware
-app.UseAuthorization();  // Add authorization middleware
+app.UseAuthentication(); 
+app.UseAuthorization();  
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

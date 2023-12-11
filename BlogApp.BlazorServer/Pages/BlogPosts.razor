@@ -1,6 +1,8 @@
 ﻿@page "/blog-posts/{BlogId:int}"
 @using BlogApp.BlazorServer.Models
 @using BlogApp.BlazorServer.Services
+@using BlogApp.WebApi.Models
+@using Microsoft.AspNetCore.Mvc
 @inject PostService PostService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -13,24 +15,31 @@
 {
     <table class="table">
         <thead>
-            <tr>
-                <th>Post Title</th>
-                <th>Publish Date</th>
-                <th>Actions</th>
-            </tr>
+        <tr>
+            <th>Post Title</th>
+            <th>Publish Date</th>
+            <th>Tags</th>
+            <th>Actions</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var post in posts)
-            {
-                <tr>
-                    <td><a href="/post-details/@post.PostId/@BlogId">@post.PostTitle</a></td>
-                    <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
-                    <td>
-                        <a href="/edit-post/@post.PostId">Edit</a>
-                        <button @onclick="() => ConfirmDelete(post.PostId)">Delete</button>
-                    </td>
-                </tr>
-            }
+        @foreach (var post in posts)
+        {
+            <tr>
+                <td><a href="/post-details/@post.PostId/@BlogId">@post.PostTitle</a></td>
+                <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    @foreach (var tag in post.Tags)
+                    {
+                        <span class="tag">@tag.Name</span>
+                    }
+                </td>
+                <td>
+                    <a href="/edit-post/@post.PostId">Edit</a>
+                    <button @onclick="() => ConfirmDelete(post.PostId)">Delete</button>
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
 }
@@ -38,12 +47,11 @@
 @code {
     [Parameter]
     public int BlogId { get; set; }
-
-    private IEnumerable<Post> posts;
+    private IEnumerable<PostDto> posts;
 
     protected override async Task OnInitializedAsync()
     {
-        posts = await PostService.GetPostsByBlogId(BlogId);
+        posts = await PostService.GetPostsByBlogIdWithTags(BlogId);
     }
 
     private async Task ConfirmDelete(int postId)
@@ -58,7 +66,7 @@
     private async Task DeletePost(int postId)
     {
         await PostService.DeletePost(postId);
-        posts = await PostService.GetPostsByBlogId(BlogId);
+        posts = await PostService.GetPostsByBlogIdWithTags(BlogId);
     }
 
     private void CreatePost()
