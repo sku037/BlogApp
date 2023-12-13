@@ -54,6 +54,9 @@ else
     [Parameter]
     public int BlogId { get; set; }
 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
     private PostDetailDto post;
     private IEnumerable<CommentDetailDto> comments;
     private Comment newComment = new Comment();
@@ -61,23 +64,23 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateTask;
+        isAuthenticated = authState.User.Identity.IsAuthenticated;
+
         post = await PostService.GetPost(PostId);
         comments = await CommentService.GetCommentsByPostId(PostId);
-        isAuthenticated = await IsUserAuthenticated();
     }
 
     private async Task AddComment()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (!user.Identity.IsAuthenticated)
+        if (!isAuthenticated)
         {
             NavigationManager.NavigateTo("/login");
             return;
         }
 
-        var username = user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
+        var authState = await AuthenticationStateTask;
+        var username = authState.User.Identity.Name;
 
         var commentCreateDto = new CommentCreateDto
             {
@@ -89,12 +92,6 @@ else
         await CommentService.CreateComment(commentCreateDto);
         newComment = new Comment();
         comments = await CommentService.GetCommentsByPostId(PostId);
-    }
-
-    private async Task<bool> IsUserAuthenticated()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        return authState.User.Identity.IsAuthenticated;
     }
 
     private void GoBack()

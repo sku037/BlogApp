@@ -3,6 +3,7 @@
 @using BlogApp.BlazorServer.Services
 @inject PostService PostService
 @inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
 
 <h3>Create Post</h3>
 
@@ -31,13 +32,24 @@
 @code {
     [Parameter] 
     public int BlogId { get; set; } 
-
     private PostCreateDto postCreateDto = new PostCreateDto();
     private string tagsInput;
 
-    protected override void OnInitialized()
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        postCreateDto.BlogId = BlogId;
+        var authState = await AuthenticationStateTask;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo("/login?returnUrl=" + returnUrl);
+        }
+        else
+        {
+            postCreateDto.BlogId = BlogId;
+        }
     }
 
     private async Task HandleSubmit()

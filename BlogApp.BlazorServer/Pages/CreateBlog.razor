@@ -1,29 +1,35 @@
 ﻿@page "/create-blog"
 @inject BlogService BlogService
-@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @using BlogApp.BlazorServer.Models
-@using BlogApp.BlazorServer.Services
 @using System.Security.Claims
+@using BlogApp.BlazorServer.Services
+@using Microsoft.AspNetCore.Components.Authorization
+
+
 
 @code {
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
     private BlogCreateDto blogCreateDto = new BlogCreateDto();
-    private bool isAuthenticated = false;
+    private bool isAuthenticated;
     private string username;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await AuthenticationStateTask;
         isAuthenticated = authState.User.Identity.IsAuthenticated;
 
-        if (isAuthenticated)
+        if (!isAuthenticated)
         {
-            username = authState.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
-            blogCreateDto.Username = username;
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo("/login?returnUrl=" + returnUrl);
         }
         else
         {
-            NavigationManager.NavigateTo("login");
+            username = authState.User.FindFirst(ClaimTypes.Name)?.Value;
+            blogCreateDto.Username = username;
         }
     }
 
@@ -36,7 +42,7 @@
         }
         else
         {
-            // Handle the error
+    // Handle erros
         }
     }
 }
@@ -64,5 +70,5 @@
 }
 else
 {
-    <p>Please <a href="login">log in</a> to create a blog.</p>
+    <p>Please <a href="/login">log in</a> to create a blog.</p>
 }

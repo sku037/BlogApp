@@ -1,68 +1,31 @@
 ﻿@inherits LayoutComponentBase
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>BlogApp.BlazorServer</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4 auth-status">
-            @if (isUserAuthenticated)
-            {
-                <span>Welcome, @userName!</span>
-                <a href="/logout">Logout</a>
-            }
-            else
-            {
-                <a href="/login">Login</a>
-                <a href="/register">Register</a>
-            }
+<CascadingAuthenticationState>
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+        <main>
+            <div class="top-row px-4 auth-status">
+                <AuthorizeView>
+                    <Authorized>
+                        <span>Welcome, @context.User.Identity.Name!</span>
+                        <a href="/logout">Logout</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
 
-@code {
-    private bool isUserAuthenticated;
-    private string userName;
-
-    protected override void OnInitialized()
-    {
-        AuthenticationStateProvider.AuthenticationStateChanged += HandleAuthenticationStateChanged;
-    }
-
-    private async void HandleAuthenticationStateChanged(Task<AuthenticationState> task)
-    {
-        var authState = await task;
-        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
-        userName = isUserAuthenticated ? authState.User.Identity.Name : "";
-        StateHasChanged();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await UpdateUserAuthenticationState();
-        }
-    }
-
-    private async Task UpdateUserAuthenticationState()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
-        userName = isUserAuthenticated ? authState.User.Identity.Name : "";
-    }
-
-    public void Dispose()
-    {
-        AuthenticationStateProvider.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
-    }
-}
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+</CascadingAuthenticationState>

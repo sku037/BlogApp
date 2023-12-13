@@ -85,7 +85,14 @@
     {
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
-            // Search logic
+            if (searchQuery.StartsWith("#")) // Search by tags
+            {
+                searchResults = await SearchService.SearchPostsByTag(searchQuery);
+            }
+            else // Search by users
+            {
+                searchResults = await SearchService.SearchPostsByUser(searchQuery);
+            }
         }
     }
 

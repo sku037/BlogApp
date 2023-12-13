@@ -45,6 +45,9 @@ builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddBlazoredLocalStorage();
 
+builder.Services.AddOptions();
+builder.Services.AddAuthorizationCore();
+
 // Detailed error messages enabled 
 builder.Services.AddServerSideBlazor().AddHubOptions(options =>
 {

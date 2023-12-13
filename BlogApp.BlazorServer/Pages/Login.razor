@@ -1,5 +1,6 @@
 ﻿@page "/login"
 @using BlogApp.BlazorServer.Models
+@using Microsoft.AspNetCore.WebUtilities
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -32,13 +33,23 @@
 @code {
     private LoginModel loginModel = new LoginModel();
     private string loginError;
+    private string returnUrl = "/";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var url))
+        {
+            returnUrl = url.FirstOrDefault();
+        }
+    }
 
     private async Task HandleLogin()
     {
         var result = await AuthService.Login(loginModel);
         if (result)
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateTo(returnUrl);
         }
         else
         {
