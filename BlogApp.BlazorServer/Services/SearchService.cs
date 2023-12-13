@@ -46,19 +46,5 @@ namespace BlogApp.BlazorServer.Services
             }
         }
 
-        public async Task<SearchResultDetailDto> GetSearchResultDetails(string id)
-        {
-            var response = await _httpClient.GetAsync($"{_searchUri}/{id}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<SearchResultDetailDto>();
-            }
-            else
-            {
-                // Handle errors or return null
-                return null;
-            }
-        }
     }
 }
