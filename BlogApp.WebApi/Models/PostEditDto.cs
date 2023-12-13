@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 
-namespace BlogApp.BlazorServer.Models
+namespace BlogApp.WebApi.Models
 {
     public class PostEditDto
     {

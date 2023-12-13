@@ -11,9 +11,9 @@ namespace BlogApp.WebApi.Controllers
     [ApiController]
     public class BlogController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IApplicationDbContext _context;
 
-        public BlogController(ApplicationDbContext context)
+        public BlogController(IApplicationDbContext context)
         {
             _context = context;
         }

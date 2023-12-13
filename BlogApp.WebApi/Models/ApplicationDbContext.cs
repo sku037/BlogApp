@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlogApp.WebApi.Models
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser> // changed DbContext to get Users for AppDbInitializer
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext // changed DbContext to get Users for AppDbInitializer
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -70,6 +70,11 @@ namespace BlogApp.WebApi.Models
             //        new { PostsPostId = 2, TagsTagId = 2 }
             //    ));
 
+        }
+
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return await base.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿@page "/edit-post/{PostId:int}"
 @using BlogApp.BlazorServer.Models
 @using BlogApp.BlazorServer.Services
-@using BlogApp.WebApi.Models
 @inject PostService PostService
 @inject NavigationManager NavigationManager
 @inject TagService TagService
@@ -72,25 +71,15 @@ else
 
     private async Task HandleSubmit()
     {
-        postEditDto.TagNames = tagsAsString.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        postEditDto.TagNames = ParseTags(tagsAsString);
         await PostService.UpdatePost(PostId, postEditDto);
         NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
     }
 
-    private List<int> ParseTagsFromString(string tags)
+    private List<string> ParseTags(string tags)
     {
-        var tagNames = tags.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var tagIds = new List<int>();
-
-        foreach (var tagName in tagNames)
-        {
-            var tag = allTags.FirstOrDefault(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase));
-            if (tag != null)
-            {
-                tagIds.Add(tag.TagId);
-            }
-        }
-
-        return tagIds;
+        return tags?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(tag => tag.Trim().StartsWith("#") ? tag : $"#{tag}")
+            .ToList() ?? new List<string>();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BlogApp.WebApi.Models
+﻿namespace BlogApp.BlazorServer.Models
 {
     public class TagDto
     {

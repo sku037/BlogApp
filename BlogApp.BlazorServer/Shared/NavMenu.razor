@@ -1,4 +1,7 @@
-﻿@inject AuthService AuthService
+﻿@using BlogApp.BlazorServer.Models
+@using BlogApp.BlazorServer.Services
+@inject AuthService AuthService
+@inject SearchService SearchService
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -9,7 +12,7 @@
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+<div class="@NavMenuCssClass nav-scrollable">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
@@ -24,12 +27,32 @@
                 </NavLink>
             </div>
         }
+        <hr /> <!-- Dividing line -->
+        <div class="search-container px-3">
+            <input class="form-control" type="text" placeholder="Search" @bind="searchQuery" />
+            <button class="btn btn-outline-success mt-2" @onclick="PerformSearch">Search</button>
+        </div>
+        <!-- Search results can be displayed here -->
+        @if (searchResults != null && searchResults.Any())
+        {
+            <div class="search-results-container px-3 mt-2">
+                @foreach (var post in searchResults)
+                {
+                    <div class="search-result-item">
+                        <NavLink class="nav-link" href="@($"/post-details/{post.PostId}/{post.BlogId}")">@post.PostTitle</NavLink>
+                    </div>
+                }
+            </div>
+        }
     </nav>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
     private bool isLoggedIn;
+    private string searchQuery;
+    // private IEnumerable<SearchResultDto> searchResults;
+    private IEnumerable<PostDto> searchResults;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -38,7 +61,22 @@
         if (firstRender)
         {
             isLoggedIn = await AuthService.IsUserLoggedIn();
-            StateHasChanged(); // This will refresh the component to show the User Profile link if logged in
+            StateHasChanged(); // Component update
+        }
+    }
+
+    private async Task PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            if (searchQuery.StartsWith("#")) // Search by tags
+            {
+                searchResults = await SearchService.SearchPostsByTag(searchQuery);
+            }
+            else // Search by users
+            {
+                searchResults = await SearchService.SearchPostsByUser(searchQuery);
+            }
         }
     }
 

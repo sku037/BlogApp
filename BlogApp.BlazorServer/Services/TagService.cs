@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using BlogApp.BlazorServer.Models;
-using BlogApp.WebApi.Models;
 
 namespace BlogApp.BlazorServer.Services
 {
