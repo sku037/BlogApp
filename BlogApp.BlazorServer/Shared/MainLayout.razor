@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>BlogApp.BlazorServer</PageTitle>
 
@@ -9,7 +11,16 @@
 
     <main>
         <div class="top-row px-4 auth-status">
-            <AuthenticationStatus />
+            @if (isUserAuthenticated)
+            {
+                <span>Welcome, @userName!</span>
+                <a href="/logout">Logout</a>
+            }
+            else
+            {
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            }
         </div>
 
         <article class="content px-4">
@@ -17,3 +28,41 @@
         </article>
     </main>
 </div>
+
+@code {
+    private bool isUserAuthenticated;
+    private string userName;
+
+    protected override void OnInitialized()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged += HandleAuthenticationStateChanged;
+    }
+
+    private async void HandleAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        var authState = await task;
+        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
+        userName = isUserAuthenticated ? authState.User.Identity.Name : "";
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateUserAuthenticationState();
+        }
+    }
+
+    private async Task UpdateUserAuthenticationState()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
+        userName = isUserAuthenticated ? authState.User.Identity.Name : "";
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+}

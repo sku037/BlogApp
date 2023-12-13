@@ -26,10 +26,8 @@ builder.Services.AddServerSideBlazor().AddHubOptions(options =>
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
-// Add Scoped Authentication State Provider
-//builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>(); // Replace with your custom provider if applicable
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>(provider =>
-    new CustomAuthenticationStateProvider(provider.GetRequiredService<IJSRuntime>()));
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
 
 builder.Services.AddSingleton<WeatherForecastService>();
 

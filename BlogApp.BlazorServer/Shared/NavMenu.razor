@@ -1,6 +1,6 @@
 ﻿@using BlogApp.BlazorServer.Models
 @using BlogApp.BlazorServer.Services
-@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject SearchService SearchService
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -19,7 +19,7 @@
                 <span class="oi oi-home" aria-hidden="true"></span> Blogs
             </NavLink>
         </div>
-        @if (isLoggedIn)
+        @if (isUserAuthenticated)
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="user-profile">
@@ -49,38 +49,53 @@
 
 @code {
     private bool collapseNavMenu = true;
-    private bool isLoggedIn;
     private string searchQuery;
     private IEnumerable<PostDto> searchResults;
+    private bool isUserAuthenticated;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override void OnInitialized()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged += HandleAuthenticationStateChanged;
+    }
+
+    private async void HandleAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        var authState = await task;
+        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
+        StateHasChanged();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            isLoggedIn = await AuthService.IsUserLoggedIn();
-            StateHasChanged(); // Component update
+            await UpdateUserAuthenticationState();
         }
+    }
+
+    private async Task UpdateUserAuthenticationState()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
     }
 
     private async Task PerformSearch()
     {
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
-            if (searchQuery.StartsWith("#")) // Search by tags
-            {
-                searchResults = await SearchService.SearchPostsByTag(searchQuery);
-            }
-            else // Search by users
-            {
-                searchResults = await SearchService.SearchPostsByUser(searchQuery);
-            }
+            // Search logic
         }
     }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
     }
 }

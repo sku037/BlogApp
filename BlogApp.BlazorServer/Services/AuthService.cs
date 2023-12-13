@@ -5,21 +5,24 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using Blazored.LocalStorage;
 using System;
-
+using Microsoft.AspNetCore.Components.Authorization;
 
 public class AuthService
 {
-    public event Action OnAuthenticationStateChanged;
-
     private readonly HttpClient _httpClient;
     private readonly ILocalStorageService _localStorageService;
     private readonly NavigationManager _navigationManager;
+    private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-    public AuthService(IHttpClientFactory httpClientFactory, ILocalStorageService localStorageService, NavigationManager navigationManager)
+    public AuthService(IHttpClientFactory httpClientFactory,
+                       ILocalStorageService localStorageService,
+                       NavigationManager navigationManager,
+                       AuthenticationStateProvider authenticationStateProvider)
     {
         _httpClient = httpClientFactory.CreateClient("BlogApi");
         _localStorageService = localStorageService;
         _navigationManager = navigationManager;
+        _authenticationStateProvider = authenticationStateProvider;
     }
 
     public async Task<bool> Login(LoginModel loginModel)
@@ -33,7 +36,7 @@ public class AuthService
             {
                 await _localStorageService.SetItemAsync("authToken", tokenResult.Token);
                 _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", tokenResult.Token);
-                NotifyAuthenticationStateChanged();
+                ((CustomAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(loginModel.Username);
                 return true;
             }
         }
@@ -45,7 +48,7 @@ public class AuthService
     {
         await _localStorageService.RemoveItemAsync("authToken");
         _httpClient.DefaultRequestHeaders.Authorization = null;
-        NotifyAuthenticationStateChanged();
+        ((CustomAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
         _navigationManager.NavigateTo("/login", true);
     }
 
@@ -54,8 +57,6 @@ public class AuthService
         var token = await _localStorageService.GetItemAsync<string>("authToken");
         return !string.IsNullOrEmpty(token);
     }
-
-    private void NotifyAuthenticationStateChanged() => OnAuthenticationStateChanged?.Invoke();
 
     // Get token for username in welcome
     public async Task<string> GetAuthToken()
@@ -69,18 +70,13 @@ public class AuthService
 
         if (response.IsSuccessStatusCode)
         {
-            // You could log the user in directly after registration,
-            // or return true and redirect them to a login page.
+            // Optionally log the user in directly after registration
             return true;
         }
 
-        // If there are any errors, you could potentially handle them here,
-        // possibly logging them or returning a different kind of response
-        // to indicate the specific failure.
+        // Handle errors here
         return false;
     }
-
-
 }
 
 public class TokenResult
