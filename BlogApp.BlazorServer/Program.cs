@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization; // Add this for authenticat
 using Microsoft.AspNetCore.Identity; // If using ASP.NET Core Identity
 using Microsoft.EntityFrameworkCore; // If using Entity Framework
 using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,13 @@ builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddOptions();
 builder.Services.AddAuthorizationCore();
+
+builder.Services.AddSingleton<IAuthorizationHandler, ResourceOwnerAuthorizationHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("IsResourceOwner", policy =>
+        policy.Requirements.Add(new ResourceOwnerRequirement()));
+});
 
 // Detailed error messages enabled 
 builder.Services.AddServerSideBlazor().AddHubOptions(options =>

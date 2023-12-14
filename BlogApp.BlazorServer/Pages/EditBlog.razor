@@ -1,16 +1,15 @@
 ﻿@page "/edit-blog/{BlogId:int}"
 @inject BlogService BlogService
 @inject NavigationManager NavigationManager
+@inject IAuthorizationService AuthorizationService
 @using BlogApp.BlazorServer.Models
 @using BlogApp.BlazorServer.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h3>Edit Blog</h3>
 
-@if (blogEditDto == null)
-{
-    <p>Loading...</p>
-}
-else
+@if (authorizationResult?.Succeeded ?? false)
 {
     <EditForm Model="@blogEditDto" OnValidSubmit="@HandleSubmit">
         <DataAnnotationsValidator />
@@ -29,24 +28,40 @@ else
         <button type="submit" class="btn btn-success">Save Changes</button>
     </EditForm>
 }
+else if (authorizationResult?.Succeeded == false)
+{
+    <p>You are not authorized to edit this blog.</p>
+}
+else
+{
+    <p>Loading...</p>
+}
 
 @code {
     [Parameter]
     public int BlogId { get; set; }
     private BlogEditDto blogEditDto = new BlogEditDto();
     private Blog originalBlog;
+    private AuthorizationResult? authorizationResult;
 
     protected override async Task OnInitializedAsync()
     {
         originalBlog = await BlogService.GetBlog(BlogId);
         blogEditDto.Title = originalBlog.Title;
         blogEditDto.Description = originalBlog.Description;
-         
+        blogEditDto.Username = originalBlog.User?.UserName;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        authorizationResult = await AuthorizationService.AuthorizeAsync(user, blogEditDto, "IsResourceOwner");
     }
 
     private async Task HandleSubmit()
     {
-        await BlogService.UpdateBlog(BlogId, blogEditDto);
-        NavigationManager.NavigateTo("/");
+        if (authorizationResult?.Succeeded == true)
+        {
+            await BlogService.UpdateBlog(BlogId, blogEditDto);
+            NavigationManager.NavigateTo("/");
+        }
     }
 }

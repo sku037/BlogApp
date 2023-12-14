@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using BlogApp.BlazorServer.Services;
+using Microsoft.Extensions.Hosting;
 
 namespace BlogApp.BlazorServer.Models
 {
@@ -15,5 +16,6 @@ namespace BlogApp.BlazorServer.Models
 
         // Relationship with Posts
         public virtual ICollection<Post> Posts { get; set; }
+
     }
 }
