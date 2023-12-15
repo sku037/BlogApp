@@ -1,0 +1,118 @@
+﻿@page "/chat"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using BlogApp.BlazorServer.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@inject ChatHistoryService ChatHistoryService
+
+<CascadingAuthenticationState>
+    <h3>Chat</h3>
+
+    @if (isAuthenticated)
+    {
+        <div>
+            <input type="text" @bind="messageInput" @onkeyup="CheckEnter" />
+            <button @onclick="SendMessage">Send</button>
+            <button @onclick="ClearHistory">Clear chat</button>
+        </div>
+
+        <div class="chat-messages">
+            @foreach (var message in messages)
+            {
+                <div class="message-box">
+                    <p>@message</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>Please, <NavLink href="login">log in</NavLink> to use the chat.</p>
+    }
+</CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    private HubConnection hubConnection;
+    private bool isAuthenticated = false;
+    private List<string> messages = new List<string>();
+    private string messageInput;
+    private string username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateTask;
+        isAuthenticated = authState.User.Identity.IsAuthenticated;
+
+        if (!isAuthenticated)
+        {
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}");
+        }
+        else
+        {
+            username = authState.User.Identity.Name;
+
+            // Loading chat history
+            var history = await ChatHistoryService.LoadMessagesAsync();
+            messages.AddRange(history);
+
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(NavigationManager.ToAbsoluteUri("/chatHub"))
+                .Build();
+
+            hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+            {
+                InvokeAsync(() =>
+                {
+                    messages.Add($"{user}: {message}");
+                    StateHasChanged(); // Trigger UI update
+                });
+            });
+
+            hubConnection.On("ChatHistoryCleared", () =>
+            {
+                InvokeAsync(() =>
+                {
+                    messages.Clear();
+                    StateHasChanged();
+                });
+            });
+
+            await hubConnection.StartAsync();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(messageInput))
+        {
+            await hubConnection.SendAsync("SendMessage", username, messageInput);
+            messageInput = string.Empty;
+        }
+    }
+
+    private void CheckEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SendMessage();
+        }
+    }
+
+    private async Task ClearHistory()
+    {
+        await hubConnection.SendAsync("ClearChatHistory");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

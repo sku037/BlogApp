@@ -101,3 +101,23 @@ a, .btn-link {
     margin-top: 1rem; 
     margin-bottom: 1rem; 
 }
+
+.chat-messages {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.message-box {
+    background-color: #ADD8E6; /* farge LightBlue */
+    color: black; /* text color */
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.message-input {
+    width: 100%;
+    max-width: 800px;
+    min-height: 50px;
+    overflow-wrap: break-word;
+}

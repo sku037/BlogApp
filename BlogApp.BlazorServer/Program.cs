@@ -8,8 +8,25 @@ using Microsoft.AspNetCore.Identity; // If using ASP.NET Core Identity
 using Microsoft.EntityFrameworkCore; // If using Entity Framework
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
+using Serilog.Events;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog for logging
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/chatapp.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+// Add logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -19,6 +36,9 @@ builder.Services.AddServerSideBlazor().AddHubOptions(options =>
     options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
     options.KeepAliveInterval = TimeSpan.FromSeconds(30);
 });
+
+// SignalR Hub Route
+builder.Services.AddSignalR();
 
 // Add ASP.NET Core Identity Services (if using Identity)
 // Configure Entity Framework and Identity here if applicable
@@ -31,6 +51,9 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 
 
 builder.Services.AddSingleton<WeatherForecastService>();
+// service for saving chat to file
+builder.Services.AddSingleton(new ChatHistoryService("chat_history.txt"));
+
 
 // Add HTTP client to send requests to Blog.WebApi
 builder.Services.AddHttpClient("BlogApi", client =>
@@ -42,7 +65,7 @@ builder.Services.AddScoped<BlogService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<TagService>();
-builder.Services.AddScoped<SearchService>(); 
+builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddBlazoredLocalStorage();
 
@@ -62,6 +85,7 @@ builder.Services.AddServerSideBlazor().AddHubOptions(options =>
     options.EnableDetailedErrors = true;
 });
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -80,6 +104,7 @@ app.UseAuthentication();
 app.UseAuthorization();  
 
 app.MapBlazorHub();
+app.MapHub<ChatHub>("/chatHub"); // Map the ChatHub to "/chatHub" endpoint
 app.MapFallbackToPage("/_Host");
 
 app.Run();
