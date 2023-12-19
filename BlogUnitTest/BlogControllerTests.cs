@@ -17,16 +17,33 @@ namespace BlogUnitTest
         [TestInitialize]
         public void SetUp()
         {
-            // Generate a unique database name for each test run
             var dbName = Guid.NewGuid().ToString();
-
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(databaseName: dbName)
                 .Options;
 
             var context = new ApplicationDbContext(options);
 
-            // Add test data to the in-memory database
+            // Add test user data
+            var user1 = new ApplicationUser
+            {
+                Id = "user1",
+                UserName = "User1",
+                FirstName = "FirstName1", // Set required FirstName
+                LastName = "LastName1"    // Set required LastName
+                // Set any other required properties
+            };
+            var user2 = new ApplicationUser
+            {
+                Id = "user2",
+                UserName = "User2",
+                FirstName = "FirstName2", // Set required FirstName
+                LastName = "LastName2"    // Set required LastName
+                // Set any other required properties
+            };
+            context.Users.AddRange(user1, user2);
+
+            // Add test blog data
             context.Blogs.AddRange(
                 new Blog
                 {
@@ -34,7 +51,7 @@ namespace BlogUnitTest
                     Title = "Test Blog 1",
                     Description = "Description of Test Blog 1",
                     CreatedDate = new DateTime(2022, 1, 1),
-                    UserId = "user1"
+                    User = user1
                 },
                 new Blog
                 {
@@ -42,13 +59,15 @@ namespace BlogUnitTest
                     Title = "Test Blog 2",
                     Description = "Description of Test Blog 2",
                     CreatedDate = new DateTime(2022, 1, 2),
-                    UserId = "user2"
-                });
+                    User = user2
+                }
+            );
 
             context.SaveChanges();
-
             _controller = new BlogController(context);
         }
+
+
 
         // Tests for GetBlogs
         [TestMethod]
@@ -59,10 +78,10 @@ namespace BlogUnitTest
 
             // Assert
             Assert.IsNotNull(result);
-            var model = result.Value; // Изменение здесь
+            var model = result.Value; // Change here
             Assert.IsNotNull(model);
             var blogList = model.ToList();
-            Assert.AreEqual(2, blogList.Count); // Проверяем, что возвращаются два блога
+            Assert.AreEqual(2, blogList.Count); // Check 2 blogs are returned
         }
 
         [TestMethod]
@@ -70,7 +89,7 @@ namespace BlogUnitTest
         {
             // Arrange - Создаем новую пустую In-Memory Database
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Уникальное имя для новой базы данных
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique name for ney database
                 .Options;
 
             var emptyContext = new ApplicationDbContext(options);
@@ -84,7 +103,7 @@ namespace BlogUnitTest
             var model = result.Value;
             Assert.IsNotNull(model);
             var blogList = model.ToList();
-            Assert.AreEqual(0, blogList.Count); // Проверяем, что список блогов пуст
+            Assert.AreEqual(0, blogList.Count); // Check blog list is empty
         }
 
         [TestMethod]
@@ -96,13 +115,26 @@ namespace BlogUnitTest
                 .Options;
 
             var context = new ApplicationDbContext(options);
+
+            // Add a User entity with all required properties
+            var user = new ApplicationUser
+            {
+                Id = "user1",
+                UserName = "TestUser",
+                FirstName = "FirstName", // Add a value for FirstName
+                LastName = "LastName"    // Add a value for LastName
+                // Add other necessary properties of ApplicationUser if required
+            };
+            context.Users.Add(user);
+
+            // Add a Blog entity
             var existingBlog = new Blog
             {
                 BlogId = 1,
                 Title = "Test Blog 1",
                 Description = "Description of Test Blog 1",
                 CreatedDate = new DateTime(2022, 1, 1),
-                UserId = "user1"
+                UserId = user.Id // Use the Id of the user you just added
             };
             context.Blogs.Add(existingBlog);
             context.SaveChanges();
@@ -114,23 +146,26 @@ namespace BlogUnitTest
 
             // Assert
             Assert.IsNotNull(result);
-            var blog = result.Value; // Напрямую обращаемся к Value
+            var blog = result.Value; // Directly access the Value
             Assert.IsNotNull(blog);
             Assert.AreEqual(existingBlog.BlogId, blog.BlogId);
+            Assert.AreEqual("TestUser", blog.Username); // Assert that the Username is correctly mapped
         }
+
+
 
         [TestMethod]
         public async Task GetBlog_ShouldReturnNotFound_WhenNotExists()
         {
             // Arrange
-            var blogId = 100; // ID несуществующего блога
+            var blogId = 100; // blog ID which doesn't exist
 
             // Act
             var result = await _controller.GetBlog(blogId);
 
             // Assert
             Assert.IsNotNull(result);
-            var notFoundResult = result.Result as NotFoundResult; // Используйте result.Result для доступа к ActionResult
+            var notFoundResult = result.Result as NotFoundResult; // Use result.Result for access to ActionResult
             Assert.IsNotNull(notFoundResult, "Expected NotFoundResult, but got a different type.");
         }
 

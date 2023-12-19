@@ -9,6 +9,12 @@
 <div class="post-container">
     <h2>@post?.PostTitle</h2>
     <p>Published on: @post?.PublishDate.ToString("yyyy-MM-dd")</p>
+    
+    @if (!string.IsNullOrWhiteSpace(post?.ImagePath))
+    {
+        <img src="@BuildImageUrl(post.ImagePath)" alt="Post Image" class="post-image" />
+    }
+
     <p>@post?.Content</p>
     <p>Posted by: @post?.Username</p>
 </div>
@@ -92,6 +98,19 @@ else
         await CommentService.CreateComment(commentCreateDto);
         newComment = new Comment();
         comments = await CommentService.GetCommentsByPostId(PostId);
+    }
+
+    private string BuildImageUrl(string imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+            return string.Empty;
+
+        // WebApi url
+        string baseApiUrl = "https://localhost:7212";
+
+        // Form full url
+        string formattedImagePath = imagePath.Replace("\\", "/");
+        return $"{baseApiUrl}/{formattedImagePath}";
     }
 
     private void GoBack()

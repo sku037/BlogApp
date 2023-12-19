@@ -23,12 +23,14 @@ namespace BlogApp.WebApi.Controllers
         public async Task<ActionResult<IEnumerable<BlogDto>>> GetBlogs()
         {
             var blogs = await _context.Blogs
+                .Include(b => b.User) // Include the User data
                 .Select(b => new BlogDto
                 {
                     BlogId = b.BlogId,
                     Title = b.Title,
                     Description = b.Description,
-                    CreatedDate = b.CreatedDate
+                    CreatedDate = b.CreatedDate,
+                    Username = b.User.UserName 
                 })
                 .ToListAsync();
 
@@ -36,27 +38,29 @@ namespace BlogApp.WebApi.Controllers
         }
 
         // GET: api/Blog/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<BlogDto>> GetBlog(int id)
+[HttpGet("{id}")]
+public async Task<ActionResult<BlogDto>> GetBlog(int id)
+{
+    var blog = await _context.Blogs
+        .Include(b => b.User) // Include the User entity
+        .Where(b => b.BlogId == id)
+        .Select(b => new BlogDto
         {
-            var blog = await _context.Blogs
-                .Where(b => b.BlogId == id)
-                .Select(b => new BlogDto
-                {
-                    BlogId = b.BlogId,
-                    Title = b.Title,
-                    Description = b.Description,
-                    CreatedDate = b.CreatedDate
-                })
-                .FirstOrDefaultAsync();
+            BlogId = b.BlogId,
+            Title = b.Title,
+            Description = b.Description,
+            CreatedDate = b.CreatedDate,
+            Username = b.User.UserName // Map the User's username
+        })
+        .FirstOrDefaultAsync();
 
-            if (blog == null)
-            {
-                return NotFound();
-            }
+    if (blog == null)
+    {
+        return NotFound();
+    }
 
-            return blog;
-        }
+    return blog;
+}
 
         // POST: api/Blog
         [HttpPost]

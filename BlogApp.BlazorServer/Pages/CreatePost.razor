@@ -25,6 +25,11 @@
         <label for="tags">Tags:</label>
         <InputText id="tags" class="form-control" @bind-Value="tagsInput" placeholder="Enter tags separated by commas" />
     </div>
+    
+    <div class="form-group">
+        <label for="image">Image:</label>
+        <InputFile id="image" OnChange="@OnImageSelected" accept="image/*" />
+    </div>
 
     <button type="submit" class="btn btn-primary">Create</button>
 </EditForm>
@@ -74,4 +79,29 @@
             .Select(tag => tag.Trim().StartsWith("#") ? tag : $"#{tag}")
             .ToList() ?? new List<string>();
     }
+    
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        if (imageFile != null)
+        {
+            using var stream = imageFile.OpenReadStream(maxAllowedSize: 10240000); // File size limit 10MB
+            byte[] buffer = new byte[imageFile.Size];
+            await stream.ReadAsync(buffer);
+    
+            // Save image and set the ImagePath in postCreateDto
+            var imagePath = await PostService.SaveImageAsync(buffer);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                postCreateDto.ImagePath = imagePath;
+            }
+            else
+            {
+    // Handle the case where image was not saved successfully
+                Console.WriteLine("Failed to save image.");
+            }
+        }
+    }
+
+
 }

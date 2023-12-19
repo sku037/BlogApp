@@ -13,6 +13,8 @@ namespace BlogApp.WebApi.Models
         public int BlogId { get; set; }
         public List<string> TagNames { get; set; }
         public List<TagDto> Tags { get; set; }
+        public string ImagePath { get; set; }
+        public string OwnerUsername => Username;
 
     }
 

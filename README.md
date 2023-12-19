@@ -41,3 +41,25 @@ Using the chat feature is straightforward:
 6. **Clear Chat History:** Click the 'Clear chat' button to permanently remove the current chat history from the session.
 
 This chat functionality is part of our commitment to enhance user experience and foster effective communication within the application.n 
+
+## Image Upload Feature for Posts
+
+### Overview
+
+The **Image Upload** feature allows users to add visual content to their posts. 
+
+### Key Features
+
+- **File Upload Support:** The feature supports the uploading of image files directly from the user's device.
+- **Automatic Image Storage:** Uploaded images are automatically stored on the server
+
+### Usage
+
+Using the Image Upload feature involves a few simple steps:
+
+1. **Access Post Creation or Editing:** Navigate to the post creation or editing page.
+2. **Choose an Image:** Click on the 'Choose File' button to select an image from your device.
+3. **Upload Image:** Once an image is selected, it is automatically prepared for upload.
+4. **Submit Post:** After composing your post, submit it. The image will be uploaded and stored on the server along with your post.
+5. **View Post with Image:** On successful post submission, the image will be displayed as part of your blog post.
+

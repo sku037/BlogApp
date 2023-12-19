@@ -36,7 +36,7 @@
         }
         <hr /> <!-- Dividing line -->
         <div class="search-container px-3">
-            <input class="form-control" type="text" placeholder="Search" @bind="searchQuery" />
+            <input class="form-control" type="text" placeholder="Search" @bind="searchQuery" @onkeypress="CheckEnterForSearch" />
             <button class="btn btn-outline-success mt-2" @onclick="PerformSearch">Search</button>
         </div>
         <!-- Search results can be displayed here -->
@@ -111,5 +111,13 @@
     public void Dispose()
     {
         AuthenticationStateProvider.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+
+    private async Task CheckEnterForSearch(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await PerformSearch();
+        }
     }
 }

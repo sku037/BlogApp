@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using BlogApp.BlazorServer.Services;
+using Microsoft.Extensions.Hosting;
 using System.Xml.Linq;
 
 namespace BlogApp.BlazorServer.Models
 {
-    public class PostDetailDto
+    public class PostDetailDto: IResourceOwner
     {
         public int PostId { get; set; }
         public string PostTitle { get; set; }
@@ -13,6 +14,8 @@ namespace BlogApp.BlazorServer.Models
         public int BlogId { get; set; }
         public List<string> TagNames { get; set; }
         public List<TagDto> Tags { get; set; }
+        public string ImagePath { get; set; }
+        public string OwnerUsername => Username;
     }
 
 }

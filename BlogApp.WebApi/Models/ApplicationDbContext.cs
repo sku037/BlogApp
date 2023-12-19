@@ -33,6 +33,12 @@ namespace BlogApp.WebApi.Models
                 .HasForeignKey(c => c.PostId) // Foreign key in Comment - PostId
                 .OnDelete(DeleteBehavior.Restrict); // Cascade delete change
 
+            //modelBuilder.Entity<Post>()
+            //    .HasMany(p => p.Comments)
+            //    .WithOne(c => c.Post)
+            //    .HasForeignKey(c => c.PostId)
+            //    .OnDelete(DeleteBehavior.Cascade);
+
             // Seeding is performed with AppDbInitializer
 
             //// Seeding data for Blogs

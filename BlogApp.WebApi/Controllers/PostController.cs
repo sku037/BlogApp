@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace BlogApp.WebApi.Controllers
 {
@@ -10,28 +12,40 @@ namespace BlogApp.WebApi.Controllers
     public class PostController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-
-        public PostController(ApplicationDbContext context)
+        private readonly IWebHostEnvironment _env;
+        
+        public PostController(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
-        // GET: api/Post
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<PostDto>>> GetPosts()
+        // GET: api/Post/{blogId}
+        [HttpGet("ByBlogId/{blogId}")]
+        public async Task<ActionResult<IEnumerable<PostDetailDto>>> GetPosts(int blogId)
         {
             var posts = await _context.Posts
-                .Select(p => new PostDto
+                .Where(p => p.BlogId == blogId) // Filter by BlogId
+                .Include(p => p.Blog) // Include the Blog
+                .ThenInclude(b => b.User) // Include the User related to the Blog
+                .Include(p => p.Tags) // Include the Tags
+                .Select(p => new PostDetailDto
                 {
                     PostId = p.PostId,
+                    BlogId = p.BlogId,
                     PostTitle = p.PostTitle,
-                    PublishDate = p.PublishDate
+                    Content = p.Content,
+                    PublishDate = p.PublishDate,
+                    Username = p.Blog.User.UserName, // Map the username
+                    Tags = p.Tags.Select(t => new TagDto { TagId = t.TagId, Name = t.Name }).ToList(), // Map Tags to TagDto
+                    ImagePath = p.ImagePath
                     // Map other properties as needed
                 })
                 .ToListAsync();
 
             return posts;
         }
+
 
         // GET: api/Post/5
         [HttpGet("{id}")]
@@ -50,7 +64,8 @@ namespace BlogApp.WebApi.Controllers
                     Content = p.Content,
                     PublishDate = p.PublishDate,
                     Username = p.Blog.User.UserName,
-                    Tags = p.Tags.Select(t => new TagDto { TagId = t.TagId, Name = t.Name }).ToList() // Map Tags to TagDto
+                    Tags = p.Tags.Select(t => new TagDto { TagId = t.TagId, Name = t.Name }).ToList(), // Map Tags to TagDto
+                    ImagePath = p.ImagePath
                 })
                 .FirstOrDefaultAsync();
 
@@ -95,7 +110,8 @@ namespace BlogApp.WebApi.Controllers
                 Content = postCreateDto.Content,
                 PublishDate = DateTime.UtcNow,
                 BlogId = blog.BlogId,
-                Tags = tags 
+                Tags = tags,
+                ImagePath = postCreateDto.ImagePath
             };
 
             _context.Posts.Add(post);
@@ -107,7 +123,8 @@ namespace BlogApp.WebApi.Controllers
                 PostTitle = post.PostTitle,
                 Content = post.Content,
                 PublishDate = post.PublishDate,
-                TagNames = post.Tags.Select(t => t.Name).ToList() 
+                TagNames = post.Tags.Select(t => t.Name).ToList(),
+                ImagePath = post.ImagePath
             };
 
             return CreatedAtAction("GetPost", new { id = post.PostId }, createdPostDto);
@@ -127,6 +144,11 @@ namespace BlogApp.WebApi.Controllers
 
             post.PostTitle = postEditDto.PostTitle;
             post.Content = postEditDto.Content;
+            // Check if a new image path is provided and update it
+            if (!string.IsNullOrEmpty(postEditDto.ImagePath))
+            {
+                post.ImagePath = postEditDto.ImagePath;
+            }
 
             // Update tags
             if (postEditDto.TagNames != null)
@@ -175,19 +197,29 @@ namespace BlogApp.WebApi.Controllers
             return NoContent();
         }
 
-
-
         // DELETE: api/Post/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(int id)
         {
-            var post = await _context.Posts.FindAsync(id);
+            var post = await _context.Posts
+                .Include(p => p.Comments) // Include comments
+                .FirstOrDefaultAsync(p => p.PostId == id);
+
             if (post == null)
             {
                 return NotFound();
             }
 
+            // Remove comments if they exist
+            if (post.Comments != null && post.Comments.Any())
+            {
+                _context.Comments.RemoveRange(post.Comments);
+            }
+
+            // Remove the post
             _context.Posts.Remove(post);
+
+            // Save changes to the database
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -227,6 +259,36 @@ namespace BlogApp.WebApi.Controllers
                 .ToListAsync();
 
             return posts;
+        }
+
+        [HttpPost("upload")]
+        public async Task<ActionResult<string>> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            try
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(fileStream);
+                }
+
+                var imageUrl = Path.Combine("images", uniqueFileName); // Relative URL to image
+                //var imageUrl = $"{this.Request.Scheme}://{this.Request.Host}/images/{uniqueFileName}";
+                return Ok(imageUrl);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex}");
+            }
         }
 
     }

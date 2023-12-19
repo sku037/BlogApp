@@ -17,11 +17,11 @@ namespace BlogApp.BlazorServer.Services
             _httpClient = httpClientFactory.CreateClient("BlogApi");
         }
 
-        public async Task<IEnumerable<Post>> GetPosts()
+        public async Task<IEnumerable<PostDetailDto>> GetPosts(int blogId)
         {
-            var response = await _httpClient.GetAsync(_baseUri);
+            var response = await _httpClient.GetAsync($"{_baseUri}/ByBlogId/{blogId}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<IEnumerable<Post>>();
+            return await response.Content.ReadFromJsonAsync<IEnumerable<PostDetailDto>>();
         }
 
         public async Task<PostDetailDto> GetPost(int id)
@@ -82,12 +82,12 @@ namespace BlogApp.BlazorServer.Services
             }
         }
 
-
         public async Task DeletePost(int id)
         {
             var response = await _httpClient.DeleteAsync($"{_baseUri}/{id}");
             response.EnsureSuccessStatusCode();
         }
+
 
         public async Task<IEnumerable<Post>> GetPostsByBlogId(int blogId)
         {
@@ -108,6 +108,21 @@ namespace BlogApp.BlazorServer.Services
             {
                 return new List<PostDto>();
             }
+        }
+
+        public async Task<string> SaveImageAsync(byte[] image)
+        {
+            using var content = new MultipartFormDataContent();
+            var imageContent = new ByteArrayContent(image);
+            content.Add(imageContent, "file", "upload.jpg");
+
+            var response = await _httpClient.PostAsync($"{_baseUri}/upload", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync(); // Return imagePath
+            }
+
+            return null; // handle errors
         }
     }
 }

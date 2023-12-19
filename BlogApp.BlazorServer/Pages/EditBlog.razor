@@ -9,51 +9,62 @@
 
 <h3>Edit Blog</h3>
 
-@if (authorizationResult?.Succeeded ?? false)
+@if (isAuthenticated)
 {
-    <EditForm Model="@blogEditDto" OnValidSubmit="@HandleSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+    if (authorizationResult?.Succeeded ?? false)
+    {
+        <EditForm Model="@blogEditDto" OnValidSubmit="@HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-        <div class="form-group">
-            <label for="title">Title:</label>
-            <InputText id="title" class="form-control" @bind-Value="blogEditDto.Title" />
-        </div>
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <InputText id="title" class="form-control" @bind-Value="blogEditDto.Title" />
+            </div>
 
-        <div class="form-group">
-            <label for="description">Description:</label>
-            <InputTextArea id="description" class="form-control" @bind-Value="blogEditDto.Description" />
-        </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <InputTextArea id="description" class="form-control" @bind-Value="blogEditDto.Description" />
+            </div>
 
-        <button type="submit" class="btn btn-success">Save Changes</button>
-    </EditForm>
-}
-else if (authorizationResult?.Succeeded == false)
-{
-    <p>You are not authorized to edit this blog.</p>
+            <button type="submit" class="btn btn-success">Save Changes</button>
+        </EditForm>
+    }
+    else
+    {
+        <p>You are not authorized to edit this blog.</p>
+        <button class="btn btn-secondary" @onclick="GoBack">Back to Blogs</button>
+    }
 }
 else
 {
-    <p>Loading...</p>
+<p>Please <a href="/login">log in</a> to edit a blog.</p>
 }
 
 @code {
     [Parameter]
     public int BlogId { get; set; }
     private BlogEditDto blogEditDto = new BlogEditDto();
-    private Blog originalBlog;
     private AuthorizationResult? authorizationResult;
+    private bool isAuthenticated;
+
+    [CascadingParameter]
+    Task<AuthenticationState> AuthenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        originalBlog = await BlogService.GetBlog(BlogId);
-        blogEditDto.Title = originalBlog.Title;
-        blogEditDto.Description = originalBlog.Description;
-        blogEditDto.Username = originalBlog.User?.UserName;
+        var authState = await AuthenticationStateTask;
+        isAuthenticated = authState.User.Identity.IsAuthenticated;
 
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        authorizationResult = await AuthorizationService.AuthorizeAsync(user, blogEditDto, "IsResourceOwner");
+        if (!isAuthenticated)
+        {
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo("/login?returnUrl=" + returnUrl);
+            return;
+        }
+
+        blogEditDto = await BlogService.GetBlog(BlogId);
+        authorizationResult = await AuthorizationService.AuthorizeAsync(authState.User, blogEditDto, "IsResourceOwner");
     }
 
     private async Task HandleSubmit()
@@ -63,5 +74,10 @@ else
             await BlogService.UpdateBlog(BlogId, blogEditDto);
             NavigationManager.NavigateTo("/");
         }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
     }
 }

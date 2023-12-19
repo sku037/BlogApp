@@ -3,73 +3,116 @@
 @using BlogApp.BlazorServer.Services
 @using Microsoft.AspNetCore.Mvc
 @inject PostService PostService
+@inject BlogService BlogService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject IAuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<h3>Posts of Blog @BlogId</h3>
+<h3>Posts of Blog @blog?.Title</h3>
 
 <button @onclick="CreatePost">Create Post</button>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+        <button type="button" class="close" aria-label="Close" @onclick="ClearErrorMessage">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
 
 @if (posts != null && posts.Any())
 {
     <table class="table">
         <thead>
-        <tr>
-            <th>Post Title</th>
-            <th>Publish Date</th>
-            <th>Tags</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
+                <th>Post Title</th>
+                <th>Publish Date</th>
+                <th>Tags</th>
+                <th>Actions</th>
+            </tr>
         </thead>
         <tbody>
-        @foreach (var post in posts)
-        {
-            <tr>
-                <td><a href="/post-details/@post.PostId/@BlogId">@post.PostTitle</a></td>
-                <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
-                <td>
-                    @foreach (var tag in post.Tags)
-                    {
-                        <span class="tag">@tag.Name</span>
-                    }
-                </td>
-                <td>
-                    <a href="/edit-post/@post.PostId">Edit</a>
-                    <button @onclick="() => ConfirmDelete(post.PostId)">Delete</button>
-                </td>
-            </tr>
-        }
+            @foreach (var post in posts)
+            {
+                <tr>
+                    <td><a href="/post-details/@post.PostId/@BlogId">@post.PostTitle</a></td>
+                    <td>@post.PublishDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        @foreach (var tag in post.Tags)
+                        {
+                            <span class="tag">@tag.Name</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="/edit-post/@post.PostId">Edit</a>
+                        <button @onclick="() => ConfirmDelete(post)">Delete</button>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
 }
-
 @code {
     [Parameter]
     public int BlogId { get; set; }
-    private IEnumerable<PostDto> posts;
+    private BlogEditDto blog;
+    private IEnumerable<PostDetailDto> posts;
+    private string errorMessage;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        posts = await PostService.GetPostsByBlogIdWithTags(BlogId);
+        blog = await BlogService.GetBlog(BlogId);
+        posts = await PostService.GetPosts(BlogId);
     }
 
-    private async Task ConfirmDelete(int postId)
+    private async Task ConfirmDelete(PostDetailDto post)
     {
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete post {postId}?");
-        if (confirmed)
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
         {
-            await DeletePost(postId);
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}");
+            return;
+        }
+
+        var authorizationResult = await AuthorizationService.AuthorizeAsync(user, post, "IsResourceOwner");
+
+        if (authorizationResult.Succeeded)
+        {
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete post {post.PostId}?");
+            if (confirmed)
+            {
+                await DeletePost(post.PostId);
+                posts = await PostService.GetPosts(BlogId);
+            }
+        }
+        else
+        {
+            errorMessage = "You are not authorized to delete this post.";
         }
     }
 
     private async Task DeletePost(int postId)
     {
         await PostService.DeletePost(postId);
-        posts = await PostService.GetPostsByBlogIdWithTags(BlogId);
+        posts = await PostService.GetPosts(BlogId);
     }
 
     private void CreatePost()
     {
         NavigationManager.NavigateTo($"/create-post/{BlogId}");
+    }
+
+    private void ClearErrorMessage()
+    {
+        errorMessage = string.Empty;
     }
 }

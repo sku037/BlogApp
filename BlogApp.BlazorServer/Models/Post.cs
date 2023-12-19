@@ -9,6 +9,7 @@ namespace BlogApp.BlazorServer.Models
         public string PostTitle { get; set; }
         public string Content { get; set; }
         public DateTime PublishDate { get; set; }
+        public string ImagePath { get; set; }
 
         // Foreign Key for Blog
         public int BlogId { get; set; }

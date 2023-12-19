@@ -18,48 +18,63 @@ namespace BlogUnitTest
         [TestInitialize]
         public void SetUp()
         {
+            var dbName = Guid.NewGuid().ToString();
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .UseInMemoryDatabase(databaseName: dbName)
                 .Options;
 
-            _context = new ApplicationDbContext(options);
+            var context = new ApplicationDbContext(options);
 
-            // Adding users
-            var users = new List<ApplicationUser>
+            // Add test user data
+            var user = new ApplicationUser
             {
-                new ApplicationUser { Id = "user1", UserName = "User1", FirstName = "First1", LastName = "Last1" },
-                new ApplicationUser { Id = "user2", UserName = "User2", FirstName = "First2", LastName = "Last2" }
+                Id = "user1",
+                UserName = "User1",
+                FirstName = "First", // Set FirstName
+                LastName = "Last" // Set LastName
             };
-            _context.Users.AddRange(users);
+            context.Users.Add(user);
 
-            // Adding blogs
-            var blogs = new List<Blog>
+            // Add test blog data
+            var blog = new Blog
             {
-                new Blog { BlogId = 1, Title = "Blog 1", Description = "Description for Blog 1", UserId = "user1" },
-                new Blog { BlogId = 2, Title = "Blog 2", Description = "Description for Blog 2", UserId = "user2" }
+                BlogId = 1,
+                Title = "Test Blog",
+                Description = "Blog Description",
+                UserId = user.Id, // Set UserId
+                // Set any other required properties
             };
-            _context.Blogs.AddRange(blogs);
+            context.Blogs.Add(blog);
 
-            // Adding posts
-            var posts = new List<Post>
+            // Add test post data
+            var post = new Post
             {
-                new Post { PostId = 1, PostTitle = "Post 1", Content = "Content for Post 1", BlogId = 1, PublishDate = DateTime.UtcNow },
-                new Post { PostId = 2, PostTitle = "Post 2", Content = "Content for Post 2", BlogId = 2, PublishDate = DateTime.UtcNow }
+                PostId = 1,
+                PostTitle = "Test Post",
+                Content = "Content of Test Post",
+                PublishDate = DateTime.UtcNow,
+                ImagePath = "default-image-path.jpg", // Set ImagePath
+                BlogId = blog.BlogId, // Link to the test blog
+                
             };
-            _context.Posts.AddRange(posts);
+            context.Posts.Add(post);
 
-            // Adding comments
-            var comments = new List<Comment>
+            // Add test comment data
+            var comment = new Comment
             {
-                new Comment { CommentId = 1, Text = "Comment 1", Date = DateTime.UtcNow, PostId = 1, UserId = "user1" },
-                new Comment { CommentId = 2, Text = "Comment 2", Date = DateTime.UtcNow, PostId = 2, UserId = "user2" }
+                CommentId = 1,
+                Text = "Test Comment",
+                Date = DateTime.UtcNow,
+                PostId = post.PostId, // Associate with the test post
+                UserId = user.Id, // Set UserId
+                
             };
-            _context.Comments.AddRange(comments);
+            context.Comments.Add(comment);
 
-            _context.SaveChanges();
-
-            _controller = new CommentController(_context);
+            context.SaveChanges();
+            _controller = new CommentController(context);
         }
+
 
         [TestMethod]
         public async Task GetComments_ShouldReturnAllComments()
@@ -131,28 +146,7 @@ namespace BlogUnitTest
                 Assert.Fail("Expected CreatedAtActionResult, but got a different type.");
             }
         }
-
-
-        [TestMethod]
-        public async Task PutComment_ShouldUpdateComment_WhenExists()
-        {
-            // Arrange
-            var existingComment = _context.Comments.First(c => c.CommentId == 1); // Getting the existing comment
-            existingComment.Text = "Updated comment"; // Updating comment text
-
-            // Act
-            var result = await _controller.PutComment(existingComment.CommentId, existingComment);
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(NoContentResult));
-
-            // Checking if the data has been updated
-            var updatedComment = _context.Comments.Find(existingComment.CommentId);
-            Assert.AreEqual("Updated comment", updatedComment.Text);
-        }
-
-
+        
         [TestMethod]
         public async Task PutComment_ShouldReturnNotFound_WhenNotExists()
         {

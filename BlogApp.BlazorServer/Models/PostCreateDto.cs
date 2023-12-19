@@ -9,6 +9,7 @@ namespace BlogApp.BlazorServer.Models
         public int BlogId { get; set; }
         public List<int> TagIds { get; set; } = new List<int>();
         public List<string> TagNames { get; set; }
+        public string ImagePath { get; set; } = string.Empty;
 
     }
 }

@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using BlogApp.BlazorServer.Services;
+using Microsoft.Extensions.Hosting;
 
-namespace BlogApp.WebApi.Models
+namespace BlogApp.BlazorServer.Models
 {
-    public class BlogDto
+    public class BlogDto: IResourceOwner
     {
         public int BlogId { get; set; }
         public string Title { get; set; }

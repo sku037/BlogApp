@@ -3,15 +3,17 @@
 @using BlogApp.BlazorServer.Services
 @inject PostService PostService
 @inject NavigationManager NavigationManager
+@inject IAuthorizationService AuthorizationService
 @inject TagService TagService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h3>Edit Post</h3>
 
-@if (postEditDto == null)
+@if (!isAuthenticated)
 {
-    <p>Loading...</p>
+    <p>Please <a href="/login">log in</a> to edit this post.</p>
 }
-else
+else if (authorizationResult?.Succeeded ?? false)
 {
     <EditForm Model="@postEditDto" OnValidSubmit="@HandleSubmit">
         <DataAnnotationsValidator />
@@ -32,9 +34,24 @@ else
             <InputText id="tags" class="form-control" @bind-Value="tagsAsString" placeholder="Enter tags separated by commas" />
         </div>
 
+        <div class="form-group">
+            <label for="image">Image:</label>
+            <InputFile id="image" OnChange="@OnImageSelected" accept="image/*" />
+            @if (!string.IsNullOrWhiteSpace(postEditDto.ImagePath))
+            {
+                <img src="@BuildImageUrl(postEditDto.ImagePath)" alt="Current Image" class="current-image" />
+            }
+        </div>
+
         <button type="submit" class="btn btn-success">Save Changes</button>
     </EditForm>
 }
+else
+{
+    <p>You are not authorized to edit this post.</p>
+}
+
+<button class="btn btn-secondary" @onclick="GoBack">Back to Posts</button>
 
 @code {
     [Parameter]
@@ -43,9 +60,22 @@ else
     private PostDetailDto originalPost;
     private List<TagDto> allTags;
     private string tagsAsString;
+    private bool isAuthenticated;
+    private AuthorizationResult? authorizationResult;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateTask;
+        isAuthenticated = authState.User.Identity.IsAuthenticated;
+        if (!isAuthenticated)
+        {
+            string returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo("/login?returnUrl=" + returnUrl);
+            return;
+        }
         try
         {
             originalPost = await PostService.GetPost(PostId);
@@ -57,10 +87,14 @@ else
                 {
                     PostTitle = originalPost.PostTitle,
                     Content = originalPost.Content,
+                    ImagePath = originalPost.ImagePath,
+                    Username = originalPost.Username,
                     TagIds = originalPost.Tags?.Select(t => t.TagId).ToList() ?? new List<int>(),
-                    TagNames = originalPost.Tags?.Select(t => t.Name).ToList() ?? new List<string>() // init TagNames
+                    TagNames = originalPost.Tags?.Select(t => t.Name).ToList() ?? new List<string>() 
                 };
                 tagsAsString = String.Join(", ", postEditDto.TagNames); 
+
+                authorizationResult = await AuthorizationService.AuthorizeAsync(authState.User, postEditDto, "IsResourceOwner");
             }
         }
         catch (Exception ex)
@@ -71,9 +105,20 @@ else
 
     private async Task HandleSubmit()
     {
-        postEditDto.TagNames = ParseTags(tagsAsString);
-        await PostService.UpdatePost(PostId, postEditDto);
-        NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
+        if (authorizationResult?.Succeeded == true)
+        {
+            postEditDto.TagNames = ParseTags(tagsAsString);
+
+            var result = await PostService.UpdatePost(PostId, postEditDto);
+            if (result)
+            {
+                NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
+            }
+            else
+            {
+                Console.WriteLine("Error updating post.");
+            }
+        }
     }
 
     private List<string> ParseTags(string tags)
@@ -81,5 +126,46 @@ else
         return tags?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(tag => tag.Trim().StartsWith("#") ? tag : $"#{tag}")
             .ToList() ?? new List<string>();
+    }
+
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        if (imageFile != null)
+        {
+            using var stream = imageFile.OpenReadStream(maxAllowedSize: 10240000); // File size limit 10MB
+            byte[] buffer = new byte[imageFile.Size];
+            await stream.ReadAsync(buffer);
+
+            // Save image and set the ImagePath in postCreateDto
+            var imagePath = await PostService.SaveImageAsync(buffer);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                postEditDto.ImagePath = imagePath;
+            }
+            else
+            {
+                // Handle the case where image was not saved successfully
+                Console.WriteLine("Failed to save image.");
+            }
+        }
+    }
+
+    private string BuildImageUrl(string imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+            return string.Empty;
+
+    // WebApi url
+        string baseApiUrl = "https://localhost:7212"; // Modify this URL based on your actual API URL
+
+    // Form full url
+        string formattedImagePath = imagePath.Replace("\\", "/");
+        return $"{baseApiUrl}/{formattedImagePath}";
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo($"/blog-posts/{originalPost.BlogId}");
     }
 }

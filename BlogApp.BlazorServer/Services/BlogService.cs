@@ -17,18 +17,18 @@ namespace BlogApp.BlazorServer.Services
             _httpClient = httpClientFactory.CreateClient("BlogApi");
         }
 
-        public async Task<IEnumerable<Blog>> GetBlogs()
+        public async Task<IEnumerable<BlogDto>> GetBlogs()
         {
             var response = await _httpClient.GetAsync(_baseUri);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<IEnumerable<Blog>>();
+            return await response.Content.ReadFromJsonAsync<IEnumerable<BlogDto>>();
         }
 
-        public async Task<Blog> GetBlog(int id)
+        public async Task<BlogEditDto> GetBlog(int id)
         {
             var response = await _httpClient.GetAsync($"{_baseUri}/{id}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Blog>();
+            return await response.Content.ReadFromJsonAsync<BlogEditDto>();
         }
 
         public async Task<bool> CreateBlog(BlogCreateDto blogCreateDto)
